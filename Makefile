@@ -1,0 +1,76 @@
+CXX = clang++
+CC = clang
+
+CXXFLAGS = -g -Wall -std=c++20
+CCFLAGS = -g -Wall -Wextra
+
+INCLUDES = -I src/include
+LIBS = -l glfw
+
+LINUX = Levitate_$(shell uname -s)_$(shell uname -r)_$(shell uname -m)
+NAME = ""
+
+FPS_LIMIT = 60 # FPS limit for mangohud (FPS_LIMIT <= 0 results in an uncapped framerate)
+TESTRUN_LINUX = exit 0 &&
+TEST_LINUX = ~/bin/mangohudtest $(FPS_LIMIT) # "mangohudtest" is a custom script I wrote for test-running GraphX with MangoHUD + Gamemode. This is why I disable it on Windows
+
+SRC := src
+
+O = build
+
+OBJS = 							\
+	$(O)/glad.o					\
+	$(O)/imgui.opp				\
+	$(O)/imgui_draw.opp			\
+	$(O)/imgui_impl_glfw.opp	\
+	$(O)/imgui_impl_opengl3.opp	\
+	$(O)/imgui_stdlib.opp		\
+	$(O)/imgui_tables.opp		\
+	$(O)/imgui_widgets.opp		\
+	$(O)/imgui_demo.opp			\
+	$(O)/l_scape.opp
+
+PHONY = all clean dirty_clean compile_commands debug release linux test build
+
+all: release linux
+
+clean:
+	-rm -f build/*
+
+dirty_clean:
+	-mkdir build/backup/
+	-mv build/imgui* build/glad.o build/backup/
+	-rm -f build/*.o
+	-rm -f build/*.opp
+	-rm -f build/*.wo
+	-rm -f build/*.wopp
+	-rm -f build/*.tmp
+	-rm -f build/LevitateDebug
+	-rm -f build/$(LINUX)
+	-mv build/backup/* build/
+	-rmdir build/backup/
+
+debug:
+	$(info Version: Debug)
+	$(eval LINUX := LevitateDebug)
+	$(eval CXXFLAGS += -D LEVITATE_DEBUG)
+	-rm -f build/*.tmp
+
+release:
+	$(info Version: Release)
+	-rm -f build/*.tmp
+
+linux: NAME = $(LINUX)
+linux: $(OBJS) $(O)/main.opp
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(OBJS) $(O)/main.opp -o $(O)/$(NAME) $(LIBS)
+	$(TESTRUN_LINUX) $(O)/$(NAME)
+
+test:
+	$(info Levitate Will Test-Run After Compiling)
+	$(eval TESTRUN_LINUX := $(TEST_LINUX))
+
+$(O)/%.opp: $(SRC)/%.cpp
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
+
+$(O)/%.o: $(SRC)/%.c
+	$(CC) $(CCFLAGS) $(INCLUDES) -c $< -o $@
