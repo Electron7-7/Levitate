@@ -11,3 +11,5 @@ I'm getting so sidetracked and distracted; first thing's first: get user input a
 Okay, I have a very very very very VERY bare bones way of getting input and sending it to `std::cout` via GLFW. Now, time to make a function for handling this.
 
 Basic input and output with even more basic backspacing is done! Time to... implement fonts.
+
+HUGE IDEA FOR A FEATURE: Drag and drop files into Levitate to pin them! A small window containing your file's data (represented as text) will be dropped into your current Levitate project, and can be dragged around, rotated, or even resized. The window will have very faint/thin borders and will take mouse/keyboard input, giving off the illusion that it's a magic portal into another Levitate file (which it kinda is).
