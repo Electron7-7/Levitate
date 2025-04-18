@@ -1,16 +1,21 @@
 #define GLM_ENABLE_EXPERIMENTAL
+#include <curses.h>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <glm/fwd.hpp>
 #include <glm/glm.hpp>
 #include <glm/gtx/string_cast.hpp>
-// #include "sanity.hpp"
-#include <iostream>
+#include "sanity.hpp"
+#include "l_input.hpp"
+#include "l_rendering.hpp"
+#include "e_scape.hpp"
 
 glm::vec2 main_window_size(1280.0f, 720.0f);
 
 void mouseCallback(GLFWwindow *window, double x_position_in, double y_position_in);
 void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods);
+void frameBufferSizeCallback(GLFWwindow* window, int width, int height);
+void characterCallback(GLFWwindow* window, unsigned int codepoint);
 
 int main()
 {
@@ -24,34 +29,38 @@ int main()
 
 	if(main_window == nullptr)
 	{
-		std::cerr << "[ERROR] Failed to create GLFW window!" << std::endl;
+		PRINTERR("Failed to create GLFW window!")
 		glfwTerminate();
 	}
 
 	if(!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
-		std::cerr << "[ERROR] Failed to initialize GLAD!" << std::endl;
+		PRINTERR("Failed to initialize GLAD!")
 	
 	const GLFWvidmode *primary_monitor_video_mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
 	int primary_monitor_xposition = 0;
 	int primary_monitor_yposition = 0;
 	glfwGetMonitorPos(glfwGetPrimaryMonitor(), &primary_monitor_xposition, &primary_monitor_yposition);
 	glfwSetWindowPos(main_window, static_cast<int>(((primary_monitor_video_mode->width - main_window_size[0]) / 2) + primary_monitor_xposition), static_cast<int>(((primary_monitor_video_mode->height - main_window_size[1]) / 2) + primary_monitor_yposition));
-#ifdef LEVITATE_DEBUG
 	glfwSetInputMode(main_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-#else
-	glfwSetInputMode(main_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-#endif
+	glfwSetFramebufferSizeCallback(main_window, frameBufferSizeCallback);
 	glfwSetCursorPosCallback(main_window, mouseCallback);
+	glfwSetCharCallback(main_window, characterCallback);
 	glfwSetKeyCallback(main_window, keyCallback);
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_DEBUG_OUTPUT);
-	glEnable(GL_FRAMEBUFFER_SRGB);
+
+	GLShader temp_shader("src/shaders/font.vert", "src/shaders/font.frag");
+	temp_shader_pointer = &temp_shader;
+
+	glGenVertexArrays(1, &TEMPORARY_VAO);
+
+	QuickShittySetupFreetype();
 
 	while(!glfwWindowShouldClose(main_window))
 	{
 		glClearColor(0.85f, 0.8f, 0.95f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
+		QuickShittyPrintToScreen(100.0f, main_window_size.y / 2);
 		glfwSwapBuffers(main_window);
 		glfwPollEvents();
 	}
@@ -60,11 +69,30 @@ int main()
 	return 0;
 }
 
-void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods)
+void frameBufferSizeCallback(GLFWwindow *window, int width, int height)
 {
-	if(key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
-		glfwSetWindowShouldClose(window, true);
+	main_window_size = glm::vec2(width, height);
+	glViewport(0, 0, width, height);
 }
 
 void mouseCallback(GLFWwindow *window, double x_position_in, double y_position_in)
 {}
+
+void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods)
+{
+	if(key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+		glfwSetWindowShouldClose(window, true);
+	if((key == GLFW_KEY_BACKSPACE || key == GLFW_KEY_DELETE) && (action == GLFW_PRESS || action == GLFW_REPEAT))
+		DeleteCharacter();
+	if(key == GLFW_KEY_ENTER && (action == GLFW_PRESS || action == GLFW_REPEAT))
+		InsertNewLine();
+	if(key == GLFW_KEY_RIGHT && (action == GLFW_PRESS || action == GLFW_REPEAT))
+		moveCursorHorizontally(1);
+	if(key == GLFW_KEY_LEFT && (action == GLFW_PRESS || action == GLFW_REPEAT))
+		moveCursorHorizontally(-1);
+}
+
+void characterCallback(GLFWwindow* window, unsigned int codepoint)
+{
+	InsertCharacter(codepoint);
+}

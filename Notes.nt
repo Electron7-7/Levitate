@@ -5,3 +5,9 @@ Levitate is my idea for a truly unique text editor, stemming from a single thoug
 
 [04/18/25]
 Let's get some abstract ideas and a general framework down. I think a good idea would be to have a state machine for things like being in writing mode (i.e: does the text field have focus) or (if I implement it) Vim-esque modes like "command mode". I also think that isolating the text-rendering functionality right off the bat is a good idea, so I can implement a basic console printout in place of font rendering while I'm setting up/testing everything else (because lord knows that font rendering is gonna take the most time). All right, let's get started with a basic app, window, and console printout functionality (maybe even a text buffer?). Also, try to avoid using game-engine concepts where they aren't needed (mainly, don't just immediately make a main loop).
+
+I'm getting so sidetracked and distracted; first thing's first: get user input and print it to the terminal as it's being typed.
+
+Okay, I have a very very very very VERY bare bones way of getting input and sending it to `std::cout` via GLFW. Now, time to make a function for handling this.
+
+Basic input and output with even more basic backspacing is done! Time to... implement fonts.

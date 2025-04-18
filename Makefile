@@ -4,8 +4,8 @@ CC = clang
 CXXFLAGS = -g -Wall -std=c++20
 CCFLAGS = -g -Wall -Wextra
 
-INCLUDES = -I src/include
-LIBS = -l glfw
+INCLUDES = -I src/include -I/usr/include/freetype2 -I/usr/include/libpng16 -I/usr/include/harfbuzz -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include -I/usr/include/sysprof-6
+LIBS = -l glfw -l curses -l freetype
 
 LINUX = Levitate_$(shell uname -s)_$(shell uname -r)_$(shell uname -m)
 NAME = ""
@@ -18,8 +18,11 @@ SRC := src
 
 O = build
 
-OBJS = 							\
-	$(O)/glad.o					\
+OBJS =                   \
+	$(O)/glad.o          \
+	$(O)/l_input.opp     \
+	$(O)/l_rendering.opp \
+	$(O)/e_scape.opp
 
 PHONY = all clean dirty_clean compile_commands debug release linux test build
 
