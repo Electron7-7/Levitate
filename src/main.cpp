@@ -4,10 +4,6 @@
 #include <glm/fwd.hpp>
 #include <glm/glm.hpp>
 #include <glm/gtx/string_cast.hpp>
-#include "imgui.h"
-#include "imgui_impl_glfw.h"
-#include "imgui_impl_opengl3.h"
-#include "l_scape.hpp"
 // #include "sanity.hpp"
 #include <iostream>
 
@@ -51,47 +47,14 @@ int main()
 	glEnable(GL_DEBUG_OUTPUT);
 	glEnable(GL_FRAMEBUFFER_SRGB);
 
-	//------------------------
-	// Start ImGui Boilerplate
-	//------------------------
-
-	IMGUI_CHECKVERSION();
-	ImGui::CreateContext();
-
-	ImGui::GetIO().IniFilename = nullptr;
-	ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-	ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
-
-	ImGui_ImplGlfw_InitForOpenGL(main_window, true);
-	ImGui_ImplOpenGL3_Init();
-
-	//----------------------
-	// End ImGui Boilerplate
-	//----------------------
-
-	e_scape your_e_scape(main_window_size);
-
 	while(!glfwWindowShouldClose(main_window))
 	{
 		glClearColor(0.85f, 0.8f, 0.95f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		ImGui_ImplOpenGL3_NewFrame();
-		ImGui_ImplGlfw_NewFrame();
-		ImGui::NewFrame();
-
-		your_e_scape.updateFrame(main_window);
-
-		ImGui::Render();
-		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
 		glfwSwapBuffers(main_window);
 		glfwPollEvents();
 	}
-
-	ImGui_ImplOpenGL3_Shutdown();
-	ImGui_ImplGlfw_Shutdown();
-	ImGui::DestroyContext();
 
 	glfwTerminate();
 	return 0;
@@ -104,7 +67,4 @@ void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods
 }
 
 void mouseCallback(GLFWwindow *window, double x_position_in, double y_position_in)
-{
-	if(glfwGetInputMode(window, GLFW_CURSOR) == GLFW_CURSOR_NORMAL || ImGui::GetIO().WantCaptureMouse)
-		return;
-}
+{}

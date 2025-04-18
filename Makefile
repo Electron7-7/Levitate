@@ -20,15 +20,6 @@ O = build
 
 OBJS = 							\
 	$(O)/glad.o					\
-	$(O)/imgui.opp				\
-	$(O)/imgui_draw.opp			\
-	$(O)/imgui_impl_glfw.opp	\
-	$(O)/imgui_impl_opengl3.opp	\
-	$(O)/imgui_stdlib.opp		\
-	$(O)/imgui_tables.opp		\
-	$(O)/imgui_widgets.opp		\
-	$(O)/imgui_demo.opp			\
-	$(O)/l_scape.opp
 
 PHONY = all clean dirty_clean compile_commands debug release linux test build
 
