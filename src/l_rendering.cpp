@@ -2,8 +2,6 @@
 #include "sanity.hpp"
 #include <glad/glad.h>
 #include <glm/glm.hpp>
-#include <fstream>
-#include <sstream>
 #include <glm/gtc/type_ptr.hpp>
 #include <vector>
 
@@ -22,7 +20,10 @@ void GLShaderErrorHandler(const unsigned int shader_id)
     }
 }
 
-const unsigned int compileGLShader(const std::string vertex_shader_code, const std::string fragment_shader_code)
+//
+// GLShader
+//
+GLShader::GLShader(std::string vertex_shader_code, std::string fragment_shader_code)
 {
     const char *v_shader_code = vertex_shader_code.c_str();
     const char *f_shader_code = fragment_shader_code.c_str();
@@ -38,53 +39,13 @@ const unsigned int compileGLShader(const std::string vertex_shader_code, const s
     glCompileShader(fragment);
     GLShaderErrorHandler(fragment);
 
-    unsigned int id = glCreateProgram();
+    id = glCreateProgram();
     glAttachShader(id, vertex);
     glAttachShader(id, fragment);
     glLinkProgram(id);
 
     glDeleteShader(vertex);
     glDeleteShader(fragment);
-
-    return id;
-}
-
-//
-// GLShader
-//
-/*GLShader::GLShader(std::string vertex_shader_code, std::string fragment_shader_code)
-{
-    id = compileGLShader(vertex_shader_code, fragment_shader_code);
-}*/
-
-GLShader::GLShader(std::string vertex_shader_path, std::string fragment_shader_path)
-{
-    std::ifstream vertex_shader_file;
-    std::ifstream fragment_shader_file;
-    std::stringstream vertex_shader_stream;
-    std::stringstream fragment_shader_stream;
-
-    vertex_shader_file.exceptions (std::ifstream::failbit | std::ifstream::badbit);
-    fragment_shader_file.exceptions (std::ifstream::failbit | std::ifstream::badbit);
-    try 
-    {
-        vertex_shader_file.open(vertex_shader_path.c_str());
-        fragment_shader_file.open(fragment_shader_path.c_str());
-
-        vertex_shader_stream << vertex_shader_file.rdbuf();
-        fragment_shader_stream << fragment_shader_file.rdbuf();       
-
-        vertex_shader_file.close();
-        fragment_shader_file.close();
-
-    }
-    catch(std::ifstream::failure e)
-    {
-        std::cout << "ERROR::SHADER::FILE_NOT_SUCCESFULLY_READ" << std::endl;
-        return;
-    }
- 
-    id = compileGLShader(vertex_shader_stream.str(), fragment_shader_stream.str());
 }
 
 template<> void GLShader::setUniform<bool>(const std::string &name, bool value) const

@@ -1,6 +1,7 @@
 #include "e_scape.hpp"
 #include "l_input.hpp"
 #include "sanity.hpp"
+#include <fonts.hpp>
 #include <glad/glad.h>
 #include <glm/ext/matrix_clip_space.hpp>
 #include <ft2build.h>
@@ -18,7 +19,8 @@ void QuickShittySetupFreetype()
         PRINTERR("FreeType library failed to initialize!")
 
     FT_Face new_face;
-    if(FT_New_Face(freetype, "src/fonts/Verdana.ttf", 0, &new_face))
+
+    if(FT_New_Memory_Face(freetype, Verdana_ttf, Verdana_ttf_len, 0, &new_face))
         return;
 
     FT_Set_Pixel_Sizes(new_face, 0, 48);

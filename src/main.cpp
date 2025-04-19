@@ -5,6 +5,8 @@
 #include <glm/fwd.hpp>
 #include <glm/glm.hpp>
 #include <glm/gtx/string_cast.hpp>
+#include <shaders.hpp>
+#include <fonts.hpp>
 #include "sanity.hpp"
 #include "l_input.hpp"
 #include "l_rendering.hpp"
@@ -49,7 +51,7 @@ int main()
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_DEBUG_OUTPUT);
 
-	GLShader temp_shader("src/shaders/font.vert", "src/shaders/font.frag");
+	GLShader temp_shader(font_vert, font_frag);
 	temp_shader_pointer = &temp_shader;
 
 	glGenVertexArrays(1, &TEMPORARY_VAO);
