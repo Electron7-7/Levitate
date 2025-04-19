@@ -61,6 +61,11 @@ void QuickShittyPrintToScreen(float position_x, float position_y, const int scal
     glDisable(GL_CULL_FACE);
     temp_shader_pointer->setUniform("ortho_matrix", glm::ortho(0.0f, main_window_size.x, 0.0f, main_window_size.y));
     temp_shader_pointer->setUniform("text_color", color);
+    // PICKUP HERE
+    // PICKUP HERE
+    // PICKUP HERE
+    // PICKUP HERE
+    // PICKUP HERE
     std::string fuck("Verdana");
     auto &font = all_fonts.find(fuck);
     float init_position_x = position_x;
