@@ -7,60 +7,51 @@
 #include <ft2build.h>
 #include FT_FREETYPE_H
 
-GLShader *temp_shader_pointer;
+std::string Levitate::E_Scape::global_buffer = "";
+unsigned int Levitate::E_Scape::cursor_position = 0;
 
-unsigned int TEMPORARY_VAO;
-
-FT_Library freetype;
-
-void QuickShittySetupFreetype()
+void BareBonesTyping(const unsigned int codepoint)
 {
-    if(FT_Init_FreeType(&freetype))
-        PRINTERR("FreeType library failed to initialize!")
-
-    FT_Face new_face;
-
-    if(FT_New_Memory_Face(freetype, Verdana_ttf, Verdana_ttf_len, 0, &new_face))
+    char new_character = static_cast<char>(codepoint);
+    std::string new_buffer = Levitate::E_Scape::global_buffer + new_character;
+    if(!new_buffer.compare(Levitate::E_Scape::global_buffer))
         return;
 
-    FT_Set_Pixel_Sizes(new_face, 0, 48);
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    Levitate::E_Scape::global_buffer = new_buffer;
+    std::cout << new_character << std::flush;
+}
 
-    font_map["Verdana"] = Font("Verdana");
+void moveCursorHorizontally(const int by_this_much)
+{
+    if((by_this_much < 0 && Levitate::E_Scape::cursor_position == 0) || (Levitate::E_Scape::cursor_position + by_this_much) > Levitate::E_Scape::global_buffer.size())
+        return;
+    Levitate::E_Scape::cursor_position += by_this_much;
+}
 
-    for(unsigned char character = 0 ; character < 128 ; character++)
-    {
-        if(FT_Load_Char(new_face, character, FT_LOAD_RENDER))
-        {
-            PRINTERR("FreeType failed to load glyph (character: " << character << ")")
-            continue;
-        }
+void InsertCharacter(const unsigned int codepoint)
+{
+    Levitate::E_Scape::global_buffer.insert(Levitate::E_Scape::cursor_position, 1, static_cast<char>(codepoint));
+    Levitate::E_Scape::cursor_position += 1;
+}
 
-        FT_GlyphSlot glyph_slot = new_face->glyph;
-        FT_Render_Glyph(glyph_slot, FT_RENDER_MODE_SDF);
+void InsertNewLine()
+{
+    Levitate::E_Scape::global_buffer.insert(Levitate::E_Scape::cursor_position, 1, '\n');
+    Levitate::E_Scape::cursor_position += 1;
+}
 
-        unsigned int texture_id;
-        glGenTextures(1, &texture_id);
-        glBindTexture(GL_TEXTURE_2D, texture_id);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, glyph_slot->bitmap.width, glyph_slot->bitmap.rows, 0, GL_RED, GL_UNSIGNED_BYTE, glyph_slot->bitmap.buffer);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+void DeleteCharacter()
+{
+    if(Levitate::E_Scape::cursor_position == 0)
+        return;
+    Levitate::E_Scape::cursor_position -= 1;
+    Levitate::E_Scape::global_buffer.erase(Levitate::E_Scape::cursor_position, 1);
+}
 
-        font_map.at("Verdana").character_set[character] = Character(texture_id, glyph_slot->bitmap.width, glyph_slot->bitmap.rows, glyph_slot->bitmap_left, glyph_slot->bitmap_top, static_cast<int>(glyph_slot->advance.x));
-    }
-
-    FT_Done_Face(new_face);
-
-    glBindVertexArray(TEMPORARY_VAO);
-    glGenBuffers(1, &font_map.at("Verdana").VBO);
-    glBindBuffer(GL_ARRAY_BUFFER, font_map.at("Verdana").VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6 * 4, nullptr, GL_DYNAMIC_DRAW);
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(0));
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
-    glEnableVertexAttribArray(0);
-    glEnableVertexAttribArray(1);
+const std::string getGlobalBuffer()
+{
+    std::string new_global_buffer = Levitate::E_Scape::global_buffer;
+    return new_global_buffer.insert(Levitate::E_Scape::cursor_position, 1, '|');
 }
 
 void QuickShittyPrintToScreen(float position_x, float position_y, const int scale, glm::vec3 color)
@@ -70,7 +61,8 @@ void QuickShittyPrintToScreen(float position_x, float position_y, const int scal
     glDisable(GL_CULL_FACE);
     temp_shader_pointer->setUniform("ortho_matrix", glm::ortho(0.0f, main_window_size.x, 0.0f, main_window_size.y));
     temp_shader_pointer->setUniform("text_color", color);
-    Font &font = font_map.at("Verdana");
+    std::string fuck("Verdana");
+    auto &font = all_fonts.find(fuck);
     float init_position_x = position_x;
     std::string global_buffer = getGlobalBuffer();
     for(std::string::const_iterator character_iterator = global_buffer.begin() ; character_iterator != global_buffer.end() ; character_iterator++)

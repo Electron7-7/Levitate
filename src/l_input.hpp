@@ -1,12 +1,13 @@
 #ifndef LEVITATE_INPUT
 #define LEVITATE_INPUT
 #include <string>
-#include <map>
+#include <set>
 #include <glm/glm.hpp>
 
 // Character struct from GraphX (https://github.com/Electron7-7/graphx)
 struct Character
 {
+    char character;
     unsigned int texture_id;
     int size_x;
     int size_y;
@@ -17,25 +18,26 @@ struct Character
     Character() = default;
     Character(unsigned int init_texture_id, int init_size_x, int init_size_y, int init_bearing_x, int init_bearing_y, int init_advance);
     Character(unsigned int init_texture_id, glm::vec2 init_size, glm::vec2 init_bearing, int init_advance);
+
+    const bool operator==(const Character&) const;
+    const bool operator!=(const Character&) const;
 };
 
 // Font struct from GraphX (https://github.com/Electron7-7/graphx)
 struct Font
 {
-    std::string font_name;
-    std::map<char, Character> character_set;
-    unsigned int texture_array_id;
-    unsigned int VBO;
+    std::string font_name = "";
+    std::set<Character> character_set = {};
 
     Font() = default;
-    Font(std::string init_font_name);
+    Font(unsigned char, unsigned int, std::string);
+
+    const bool operator==(const Font&) const;
+    const bool operator!=(const Font&) const;
+    const bool operator==(const std::string&) const;
+    const bool operator!=(const std::string&) const;
+    constexpr operator std::string() const;
 };
 
-void InsertCharacter(const unsigned int);
-void InsertNewLine();
-void moveCursorHorizontally(const int);
-void DeleteCharacter();
-const std::string getGlobalBuffer();
-
-extern std::map<std::string, Font> font_map;
+extern std::set<Font> all_fonts;
 #endif

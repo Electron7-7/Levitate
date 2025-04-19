@@ -5,21 +5,6 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <vector>
 
-void GLShaderErrorHandler(const unsigned int shader_id)
-{
-    // https://stackoverflow.com/a/63420289
-    int v_result = GL_FALSE;
-    int info_log_length;
-    glGetShaderiv(shader_id, GL_COMPILE_STATUS, &v_result);
-    glGetShaderiv(shader_id, GL_INFO_LOG_LENGTH, &info_log_length);
-    if(info_log_length > 0)
-    {
-        std::vector<char> shader_error_message(info_log_length + 1);
-        glGetShaderInfoLog(shader_id, info_log_length, nullptr, shader_error_message.data());
-        PRINTERR(std::string("GLSL Shader Compilation Error(s):\n") + shader_error_message.data())
-    }
-}
-
 //
 // GLShader
 //
@@ -43,9 +28,39 @@ GLShader::GLShader(std::string vertex_shader_code, std::string fragment_shader_c
     glAttachShader(id, vertex);
     glAttachShader(id, fragment);
     glLinkProgram(id);
+    GLShaderErrorHandler(id, true);
 
     glDeleteShader(vertex);
     glDeleteShader(fragment);
+}
+
+void GLShader::GLShaderErrorHandler(const unsigned int shader_id, const bool is_program)
+{
+    // https://stackoverflow.com/a/63420289
+    int v_result = GL_FALSE;
+    int info_log_length;
+    if(!is_program)
+    {
+        glGetShaderiv(shader_id, GL_COMPILE_STATUS, &v_result);
+        glGetShaderiv(shader_id, GL_INFO_LOG_LENGTH, &info_log_length);
+        if(info_log_length > 0)
+        {
+            std::vector<char> shader_error_message(info_log_length + 1);
+            glGetShaderInfoLog(shader_id, info_log_length, nullptr, shader_error_message.data());
+            PRINTERR(std::string("GLSL Shader Compilation Error(s):\n") + shader_error_message.data())
+        }
+
+        return;
+    }
+
+    glGetShaderiv(shader_id, GL_LINK_STATUS, &v_result);
+    glGetShaderiv(shader_id, GL_INFO_LOG_LENGTH, &info_log_length);
+    if(info_log_length > 0)
+    {
+        std::vector<char> shader_error_message(info_log_length + 1);
+        glGetProgramInfoLog(shader_id, info_log_length, nullptr, shader_error_message.data());
+        PRINTERR(std::string("GLSL Shader Linking Error(s):\n") + shader_error_message.data())
+    }
 }
 
 template<> void GLShader::setUniform<bool>(const std::string &name, bool value) const
@@ -86,4 +101,11 @@ template<> void GLShader::setUniform<glm::mat3>(const std::string &name, glm::ma
 template<> void GLShader::setUniform<glm::mat4>(const std::string &name, glm::mat4 value) const
 {
     glProgramUniformMatrix4fv(id, glGetUniformLocation(id, name.c_str()), 1, GL_FALSE, glm::value_ptr(value));
+}
+
+
+void Levitate::Render::InitializeRenderingAPI()
+{
+    glGenVertexArrays(VAOS_AMOUNT, &Levitate::Render::VAOs[0]);
+    glGenBuffers(VBOS_AMOUNT, &Levitate::Render::VBOs[0]);
 }

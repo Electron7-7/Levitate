@@ -1,7 +1,13 @@
 #include "l_input.hpp"
+#include "l_rendering.hpp"
+#include "sanity.hpp"
+#include <fonts.hpp>
+#include <glad/glad.h>
 #include <iostream>
+#include <ft2build.h>
+#include FT_FREETYPE_H
 
-std::map<std::string, Font> font_map;
+std::set<Font> all_fonts;
 
 //----------
 // Character
@@ -20,57 +26,68 @@ Character::Character(unsigned int init_texture_id, glm::vec2 init_size, glm::vec
 : Character(init_texture_id, init_size.x, init_size.y, init_bearing.x, init_bearing.y, init_advance)
 {}
 
+const bool Character::operator==(const Character& compare_against) const { return  (character == compare_against.character); }
+const bool Character::operator!=(const Character& compare_against) const { return !(*this == compare_against);               }
+
+
 //-----
 // Font
 //-----
-Font::Font(std::string init_font_name)
+Font::Font(unsigned char font_file, unsigned int font_file_size, std::string init_font_name)
 : font_name(init_font_name)
-{}
-
-
-std::string global_buffer = ""; // proof of concept only; delete this shit later
-unsigned long cursor_pos = 0;
-
-void BareBonesTyping(const unsigned int codepoint)
 {
-    char new_character = static_cast<char>(codepoint);
-    std::string new_buffer = global_buffer + new_character;
-    if(!new_buffer.compare(global_buffer))
+    FT_Library freetype;
+
+    if(FT_Init_FreeType(&freetype))
+    {
+        PRINTERR("FreeType library failed to initialize!")
         return;
+    }
 
-    global_buffer = new_buffer;
-    std::cout << new_character << std::flush;
-}
+    FT_Face new_face;
 
-void moveCursorHorizontally(const int by_this_much)
-{
-    if((by_this_much < 0 && cursor_pos == 0) || (cursor_pos + by_this_much) > global_buffer.size())
+    if(FT_New_Memory_Face(freetype, Verdana_ttf, Verdana_ttf_len, 0, &new_face))
+    {
+        PRINTERR("FreeType font face failed to load from memory! (name: " << init_font_name << ")")
         return;
-    cursor_pos += by_this_much;
+    }
+
+    FT_Set_Pixel_Sizes(new_face, 0, 48);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+    for(unsigned char character = 0 ; character < 128 ; character++)
+    {
+        FT_GlyphSlot glyph_slot = new_face->glyph;
+        if(FT_Render_Glyph(glyph_slot, FT_RENDER_MODE_SDF))
+        {
+            PRINTERR("FreeType failed to load glyph (character: " << character << ")")
+            continue;
+        }
+
+        unsigned int texture_id;
+        glGenTextures(1, &texture_id);
+        glBindTexture(GL_TEXTURE_2D, texture_id);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, glyph_slot->bitmap.width, glyph_slot->bitmap.rows, 0, GL_RED, GL_UNSIGNED_BYTE, glyph_slot->bitmap.buffer);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        character_set.insert(Character(texture_id, glyph_slot->bitmap.width, glyph_slot->bitmap.rows, glyph_slot->bitmap_left, glyph_slot->bitmap_top, static_cast<int>(glyph_slot->advance.x)));
+    }
+
+    FT_Done_Face(new_face);
+    FT_Done_FreeType(freetype);
+
+    glBindVertexArray(Levitate::Render::VAOs[VAO_TEXT]);
+    glBindBuffer(GL_ARRAY_BUFFER, Levitate::Render::VBOs[VBO_GLYPH]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 24, nullptr, GL_DYNAMIC_DRAW);
 }
 
-void InsertCharacter(const unsigned int codepoint)
-{
-    global_buffer.insert(cursor_pos, 1, static_cast<char>(codepoint));
-    cursor_pos += 1;
-}
+const bool Font::operator==(const std::string& compare_against) const { return  (!font_name.compare(compare_against)); }
+const bool Font::operator!=(const std::string& compare_against) const { return !(*this == compare_against);            }
 
-void InsertNewLine()
-{
-    global_buffer.insert(cursor_pos, 1, '\n');
-    cursor_pos += 1;
-}
+const bool Font::operator==(const Font& compare_against) const { return  (!font_name.compare(compare_against.font_name)); }
+const bool Font::operator!=(const Font& compare_against) const { return !(*this == compare_against);                      }
 
-void DeleteCharacter()
-{
-    if(cursor_pos == 0)
-        return;
-    cursor_pos -= 1;
-    global_buffer.erase(cursor_pos, 1);
-}
-
-const std::string getGlobalBuffer()
-{
-    std::string new_global_buffer = global_buffer;
-    return new_global_buffer.insert(cursor_pos, 1, '|');
-}
+constexpr Font::operator std::string() const { return font_name; }

@@ -1,8 +1,8 @@
 #ifndef LEVITATE_EDITOR_LANDSCAPE
 #define LEVITATE_EDITOR_LANDSCAPE
 #include "l_rendering.hpp"
-#include <bitset>
 #include <glm/glm.hpp>
+#include <bitset>
 
 namespace Levitate
 {
@@ -12,6 +12,9 @@ namespace Levitate
         constexpr std::bitset<8> FOCUSED   = 1 << 0;
         constexpr std::bitset<8> UNFOCUSED = 1 << 1;
         constexpr std::bitset<8> TEXTMODE  = 1 << 2;
+
+        extern std::string global_buffer;
+        extern unsigned int cursor_position;
     }
 }
 
