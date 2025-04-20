@@ -15,3 +15,12 @@ Basic input and output with even more basic backspacing is done! Time to... impl
 HUGE IDEA FOR A FEATURE: Drag and drop files into Levitate to pin them! A small window containing your file's data (represented as text) will be dropped into your current Levitate project, and can be dragged around, rotated, or even resized. The window will have very faint/thin borders and will take mouse/keyboard input, giving off the illusion that it's a magic portal into another Levitate file (which it kinda is).
 
 Todo: clean up everything and start working on an actual prototype.
+
+[04/20/15]
+At work from 8am-4pm today; I've spent an hour and a half creating a custom `vec3` type for fun (and practice). Just trying my hand at creating a generic math type that is compatible/interchangeable with things like `float*`, `std::vector<float>`, `glm::vec3`, etc.
+
+While making this type, I had an idea: what if I could write my own implementation of certain operators for Jolt's math types to convert them to glm types without needing to use an external function? I wanna try that...
+
+Anyways, back to what I was doing.
+
+I really like the structure of my code, but I don't want to fall into unnecessary abstraction and/or organization, so I'm gonna reign it in a lil bit lmfao.

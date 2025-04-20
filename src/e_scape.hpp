@@ -15,12 +15,14 @@ namespace Levitate
 
         extern std::string global_buffer;
         extern unsigned int cursor_position;
+        extern TextRenderCmd main_text_render_command;
+
+        void moveCursorHorizontally(const int by_this_much);
+        void InsertCharacter(const unsigned int codepoint);
+        void InsertNewLine();
+        void DeleteCharacter();
+        const std::string getGlobalBuffer();
+        void updateAndBufferTextRenderCmd();
     }
 }
-
-void QuickShittyPrintToScreen(float = 0.0f, float = 0.0f, const int = 1, glm::vec3 = glm::vec3(1.0f));
-void QuickShittySetupFreetype();
-
-extern GLShader *temp_shader_pointer;
-extern unsigned int TEMPORARY_VAO;
 #endif

@@ -11,7 +11,8 @@
     __VA_ARGS__                                    \
     DO_PRAGMA(GCC diagnostic pop)
 
-#define PRINTERR(thing) std::cerr << "[ERROR]    " << thing << std::endl;
+#define PRINTERR_INLINE(thing) std::cerr << "[ERROR]    " << thing << std::endl
+#define PRINTERR(thing) PRINTERR_INLINE(thing);
 #define PRINTNOTE(thing) std::cout << "[NOTE]    " << thing << std::endl;
 #ifdef LEVITATE_DEBUG
 #define PRINTDEBUG(thing) std::cout << "[DEBUG]    " << thing << std::endl;

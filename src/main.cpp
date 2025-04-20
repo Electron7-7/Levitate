@@ -8,6 +8,7 @@
 #include <shaders.hpp>
 #include <fonts.hpp>
 #include "sanity.hpp"
+#include "l_math.hpp"
 #include "l_input.hpp"
 #include "l_rendering.hpp"
 #include "e_scape.hpp"
@@ -25,7 +26,6 @@ int main()
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
 	GLFWwindow *main_window = glfwCreateWindow(main_window_size[0], main_window_size[1], "Levitate", nullptr, nullptr);
 	glfwMakeContextCurrent(main_window);
 
@@ -37,6 +37,8 @@ int main()
 
 	if(!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
 		PRINTERR("Failed to initialize GLAD!")
+
+	Levitate::Renderer::orthographic_matrix = glm::ortho(0.0f, Levitate::Renderer::main_window_size.x, 0.0f, Levitate::Renderer::main_window_size.y);
 	
 	const GLFWvidmode *primary_monitor_video_mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
 	int primary_monitor_xposition = 0;
@@ -51,18 +53,22 @@ int main()
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_DEBUG_OUTPUT);
 
-	GLShader temp_shader(font_vert, font_frag);
-	temp_shader_pointer = &temp_shader;
+	Levitate::GLShader font_shader(font_shader_vert.data, font_shader_frag.data);
 
-	glGenVertexArrays(1, &TEMPORARY_VAO);
+	Levitate::Renderer::InitializeRenderingAPI();
 
-	QuickShittySetupFreetype();
+	// Math testing
+	Levitate::Math::vec3 test(0.0f, 2.0f, 3.0f);
+	test[0] = 1.0f;
+	test[-1] = 0.0f;
+	glfwTerminate();
+	return 0;
 
 	while(!glfwWindowShouldClose(main_window))
 	{
 		glClearColor(0.85f, 0.8f, 0.95f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		QuickShittyPrintToScreen(100.0f, main_window_size.y / 2);
+		Levitate::Renderer::DrawText(font_shader);
 		glfwSwapBuffers(main_window);
 		glfwPollEvents();
 	}
@@ -71,9 +77,10 @@ int main()
 	return 0;
 }
 
-void frameBufferSizeCallback(GLFWwindow *window, int width, int height)
+void frameBufferSizeCallback(GLFWwindow* window, int width, int height)
 {
-	main_window_size = glm::vec2(width, height);
+	Levitate::Renderer::main_window_size = glm::vec2(width, height);
+	Levitate::Renderer::orthographic_matrix = glm::ortho(0.0f, static_cast<float>(width), 0.0f, static_cast<float>(height));
 	glViewport(0, 0, width, height);
 }
 
@@ -85,16 +92,16 @@ void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods
 	if(key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, true);
 	if((key == GLFW_KEY_BACKSPACE || key == GLFW_KEY_DELETE) && (action == GLFW_PRESS || action == GLFW_REPEAT))
-		DeleteCharacter();
+		Levitate::E_Scape::DeleteCharacter();
 	if(key == GLFW_KEY_ENTER && (action == GLFW_PRESS || action == GLFW_REPEAT))
-		InsertNewLine();
+		Levitate::E_Scape::InsertNewLine();
 	if(key == GLFW_KEY_RIGHT && (action == GLFW_PRESS || action == GLFW_REPEAT))
-		moveCursorHorizontally(1);
+		Levitate::E_Scape::moveCursorHorizontally(1);
 	if(key == GLFW_KEY_LEFT && (action == GLFW_PRESS || action == GLFW_REPEAT))
-		moveCursorHorizontally(-1);
+		Levitate::E_Scape::moveCursorHorizontally(-1);
 }
 
 void characterCallback(GLFWwindow* window, unsigned int codepoint)
 {
-	InsertCharacter(codepoint);
+	Levitate::E_Scape::InsertCharacter(codepoint);
 }
