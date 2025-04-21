@@ -1,8 +1,7 @@
 #ifndef LEVITATE_INPUT
 #define LEVITATE_INPUT
-#include <string>
 #include <map>
-#include <set>
+#include <string>
 #include <fonts.hpp>
 #include <glm/glm.hpp>
 
@@ -37,20 +36,21 @@ namespace Levitate
         Font(const std::string);
         Font(unsigned char, unsigned int, std::string);
 
+        operator std::string() const;
+        operator std::string_view() const;
+
         const bool operator==(const Font&) const;
         const bool operator!=(const Font&) const;
         const bool operator==(const std::string&) const;
         const bool operator!=(const std::string&) const;
-        const bool operator==(const std::string_view&) const;
-        const bool operator!=(const std::string_view&) const;
-        operator std::string() const;
+
     };
 
     namespace Text
     {
-        constexpr EmbeddedResource& DEFAULT_FONT = Verdana_ttf;
+        inline constexpr const EmbeddedResource& DEFAULT_FONT = Verdana_ttf;
 
-        extern std::set<Levitate::Font> all_fonts;
+        extern std::map<std::string, Levitate::Font> all_fonts;
     }
 }
 #endif

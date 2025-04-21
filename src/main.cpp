@@ -9,7 +9,6 @@
 #include <fonts.hpp>
 #include "sanity.hpp"
 #include "l_math.hpp"
-#include "l_input.hpp"
 #include "l_rendering.hpp"
 #include "e_scape.hpp"
 
@@ -53,16 +52,9 @@ int main()
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_DEBUG_OUTPUT);
 
-	Levitate::GLShader font_shader(font_shader_vert.data, font_shader_frag.data);
-
 	Levitate::Renderer::InitializeRenderingAPI();
 
-	// Math testing
-	Levitate::Math::vec3 test(0.0f, 2.0f, 3.0f);
-	test[0] = 1.0f;
-	test[-1] = 0.0f;
-	glfwTerminate();
-	return 0;
+	Levitate::GLShader font_shader(font_shader_vert, font_shader_frag);
 
 	while(!glfwWindowShouldClose(main_window))
 	{

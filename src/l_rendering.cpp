@@ -13,25 +13,29 @@
 std::array<unsigned int, Levitate::Renderer::VAOS_AMOUNT> Levitate::Renderer::VAOs;
 std::array<unsigned int, Levitate::Renderer::VBOS_AMOUNT> Levitate::Renderer::VBOs;
 std::vector<Levitate::TextRenderCmd> Levitate::Renderer::text_render_commands;
+glm::mat4 Levitate::Renderer::orthographic_matrix;
+glm::vec2 Levitate::Renderer::main_window_size;
 
 //--------
 // Classes
 //--------
 // Levitate::GLShader
 //---------
-Levitate::GLShader::GLShader(std::string vertex_shader_code, std::string fragment_shader_code)
+Levitate::GLShader::GLShader(const EmbeddedResource& vertex_shader, const EmbeddedResource& fragment_shader)
 {
-    const char *v_shader_code = vertex_shader_code.c_str();
-    const char *f_shader_code = fragment_shader_code.c_str();
+    std::string vertex_shader_string = vertex_shader.data;
+    std::string fragment_shader_string = fragment_shader.data;
+    const char* vertex_shader_c_string = vertex_shader_string.c_str();
+    const char* fragment_shader_c_string = fragment_shader_string.c_str();
 
     unsigned int vertex, fragment;
     vertex = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertex, 1, &v_shader_code, NULL);
+    glShaderSource(vertex, 1, &vertex_shader_c_string, nullptr);
     glCompileShader(vertex);
     errorHandler(vertex);
 
     fragment = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragment, 1, &f_shader_code, NULL);
+    glShaderSource(fragment, 1, &fragment_shader_c_string, nullptr);
     glCompileShader(fragment);
     errorHandler(fragment);
 
@@ -48,7 +52,6 @@ Levitate::GLShader::GLShader(std::string vertex_shader_code, std::string fragmen
 const bool Levitate::GLShader::errorHandler(const unsigned int shader_id, const bool is_program)
 {
     // TODO: condense this and make it cleaner
-
     // https://stackoverflow.com/a/63420289
     int v_result = GL_FALSE;
     int info_log_length;
@@ -61,8 +64,9 @@ const bool Levitate::GLShader::errorHandler(const unsigned int shader_id, const 
             std::vector<char> shader_error_message(info_log_length + 1);
             glGetShaderInfoLog(shader_id, info_log_length, nullptr, shader_error_message.data());
             PRINTERR(std::string("GLSL Shader Compilation Error(s):\n") + shader_error_message.data())
+            return false;
         }
-        return false;
+        return true;
     }
 
     glGetShaderiv(shader_id, GL_LINK_STATUS, &v_result);
@@ -101,6 +105,11 @@ template<> void Levitate::GLShader::setUniform<glm::vec2>(const std::string &nam
 template<> void Levitate::GLShader::setUniform<glm::vec3>(const std::string &name, glm::vec3 value) const
 {
     glProgramUniform3fv(id, glGetUniformLocation(id, name.c_str()), 1, glm::value_ptr(value));
+}
+
+template<> void Levitate::GLShader::setUniform<Levitate::Math::vec3>(const std::string &name, Levitate::Math::vec3 value) const
+{
+    glProgramUniform3fv(id, glGetUniformLocation(id, name.c_str()), 1, glm::value_ptr(glm::vec3(value)));
 }
 
 template<> void Levitate::GLShader::setUniform<glm::vec4>(const std::string &name, glm::vec4 value) const
@@ -182,7 +191,7 @@ void Levitate::Renderer::DrawText(const Levitate::GLShader& shader)
     for(auto rendercmd_iterator = Levitate::Renderer::text_render_commands.begin() ; rendercmd_iterator != Levitate::Renderer::text_render_commands.end();)
     {
         shader.setUniform("text_color", rendercmd_iterator->color);
-        auto font = Levitate::Text::all_fonts.find(Verdana_ttf.id);
+        Font& font = Levitate::Text::all_fonts.at(Verdana_ttf.idString());
         const float init_position_x = rendercmd_iterator->position_x;
         std::string global_buffer = Levitate::E_Scape::getGlobalBuffer();
         for(std::string::const_iterator character_iterator = global_buffer.begin() ; character_iterator != global_buffer.end() ; character_iterator++)
@@ -190,10 +199,10 @@ void Levitate::Renderer::DrawText(const Levitate::GLShader& shader)
             if(*character_iterator == '\n')
             {
                 rendercmd_iterator->position_x = init_position_x;
-                rendercmd_iterator->position_y -= font->character_set.at('0').size_y * rendercmd_iterator->scale;
+                rendercmd_iterator->position_y -= font.character_set.at('0').size_y * rendercmd_iterator->scale;
                 continue;
             }
-            const Character &character = font->character_set.at(*character_iterator);
+            const Character &character = font.character_set.at(*character_iterator);
             float x_position = rendercmd_iterator->position_x + character.bearing_x * rendercmd_iterator->scale;
             float y_position = rendercmd_iterator->position_y - (character.size_y - character.bearing_y) * rendercmd_iterator->scale;
             float width = character.size_x * rendercmd_iterator->scale;

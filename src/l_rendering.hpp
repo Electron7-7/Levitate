@@ -14,7 +14,7 @@ namespace Levitate
         unsigned int id = 0;
 
         GLShader();
-        GLShader(std::string, std::string);
+        GLShader(const EmbeddedResource&, const EmbeddedResource&);
 
         template<typename T> void setUniform(const std::string&, T) const;
 

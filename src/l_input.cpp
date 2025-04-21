@@ -5,7 +5,7 @@
 #include <ft2build.h>
 #include FT_FREETYPE_H
 
-std::set<Levitate::Font> Levitate::Text::all_fonts;
+std::map<std::string, Levitate::Font> Levitate::Text::all_fonts;
 
 //----------
 // Character
@@ -38,6 +38,12 @@ Levitate::Font::Font(std::string init_font_name)
 Levitate::Font::Font(unsigned char font_file, unsigned int font_file_size, std::string init_font_name)
 : font_name(init_font_name)
 {
+    if(Levitate::Text::all_fonts.contains(font_name))
+    {
+        *this = Levitate::Text::all_fonts.at(font_name);
+        return;
+    }
+
     FT_Library freetype;
 
     if(FT_Init_FreeType(&freetype))
@@ -50,7 +56,7 @@ Levitate::Font::Font(unsigned char font_file, unsigned int font_file_size, std::
 
     if(FT_New_Memory_Face(freetype, Verdana_ttf.dataUnsigned(), Verdana_ttf.length, 0, &new_face))
     {
-        PRINTERR("FreeType font face failed to load from memory! (name: " << init_font_name << ")")
+        PRINTERR("FreeType font face failed to load from memory! Font name: " << init_font_name)
         return;
     }
 
@@ -70,12 +76,14 @@ Levitate::Font::Font(unsigned char font_file, unsigned int font_file_size, std::
 
     FT_Done_Face(new_face);
     FT_Done_FreeType(freetype);
+
+    Levitate::Text::all_fonts[font_name] = *this;
 }
 
-const bool Levitate::Font::operator==(const std::string& compare_against) const { return  (!font_name.compare(compare_against)); }
-const bool Levitate::Font::operator!=(const std::string& compare_against) const { return !(*this == compare_against);            }
+Levitate::Font::operator std::string()      const { return font_name; }
+Levitate::Font::operator std::string_view() const { return font_name; }
 
-const bool Levitate::Font::operator==(const Levitate::Font& compare_against) const { return  (!font_name.compare(compare_against.font_name)); }
-const bool Levitate::Font::operator!=(const Levitate::Font& compare_against) const { return !(*this == compare_against);                      }
-
-Levitate::Font::operator std::string() const { return font_name; }
+const bool Levitate::Font::operator==(const std::string&      compare_against) const { return !font_name.compare(compare_against);           }
+const bool Levitate::Font::operator!=(const std::string&      compare_against) const { return !(*this == compare_against);                   }
+const bool Levitate::Font::operator==(const Levitate::Font&   compare_against) const { return !font_name.compare(compare_against.font_name); }
+const bool Levitate::Font::operator!=(const Levitate::Font&   compare_against) const { return !(*this == compare_against);                   }

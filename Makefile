@@ -52,6 +52,7 @@ dirty_clean:
 	-rm -f build/*.tmp
 	-rm -f build/LevitateDebug
 	-rm -f build/$(LINUX)
+	-rm -f $(O)/main.opp
 
 test:
 	./$(O)/$(NAME)
@@ -88,7 +89,8 @@ $(O)/%.o: $(SRC)/%.c
 
 $(SHADERS):
 	$(shell printf "#ifndef LEVITATE_EMBEDDED_SHADERS\n#define LEVITATE_EMBEDDED_SHADERS\n#include <embedded_resource.hpp>\n" > $(SHADERS))
-	$(foreach file,$(SHDRS), $(shell printf "constexpr EmbeddedResource $(subst .,_,$(notdir $(file)))(\"$(subst .,_,$(notdir $(file)))\"," >> $(SHADERS) && xxd -n X -i $(file) | sed -zEe 's/unsigned char X\[\] = \{\n  (((\w|[0-9])+(,( |\n  )|))+)\n\};\n(unsigned int X_len = ([0-9]+);)/\7, "\1"\);/g' -zEe 's/(\n  | )//g' >> $(SHADERS)))
+# 	$(foreach file,$(SHDRS), $(shell printf "constexpr EmbeddedResource $(subst .,_,$(notdir $(file)))(\"$(subst .,_,$(notdir $(file)))\"," >> $(SHADERS) && xxd -n X -i $(file) | sed -zEe 's/unsigned char X\[\] = \{\n  (((\w|[0-9])+(,( |\n  )|))+)\n\};\n(unsigned int X_len = ([0-9]+);)/\7, "\1"\);/g' -zEe 's/(\n  | )//g' >> $(SHADERS)))
+	$(foreach file,$(SHDRS), $(shell printf "constexpr EmbeddedResource $(subst .,_,$(notdir $(file)))(\"$(subst .,_,$(notdir $(file)))\", 0, R\"~(" >> $(SHADERS) && cat $(file) >> $(SHADERS) && printf ")~\");\n" >> $(SHADERS)))
 	$(shell printf "#endif" >> $(SHADERS))
 
 $(FONTS):
