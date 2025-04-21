@@ -8,7 +8,6 @@
 #include <shaders.hpp>
 #include <fonts.hpp>
 #include "sanity.hpp"
-#include "l_math.hpp"
 #include "l_rendering.hpp"
 #include "e_scape.hpp"
 
