@@ -29,20 +29,18 @@ namespace Levitate
     // Font struct from GraphX (https://github.com/Electron7-7/graphx)
     struct Font
     {
-        std::string font_name = "";
+        // std::string font_name = "";
+        int font_id = -1;
         std::map<char, Character> character_set = {};
 
         Font() = default;
-        Font(const std::string);
-        Font(unsigned char, unsigned int, std::string);
-
-        operator std::string() const;
-        operator std::string_view() const;
+        Font(const int);
+        Font(unsigned char, unsigned int, int);
 
         const bool operator==(const Font&) const;
         const bool operator!=(const Font&) const;
-        const bool operator==(const std::string&) const;
-        const bool operator!=(const std::string&) const;
+        const bool operator==(const int&) const;
+        const bool operator!=(const int&) const;
 
     };
 
@@ -50,7 +48,7 @@ namespace Levitate
     {
         inline constexpr const EmbeddedResource& DEFAULT_FONT = Verdana_ttf;
 
-        extern std::map<std::string, Levitate::Font> all_fonts;
+        extern std::map<int, Levitate::Font> all_fonts;
     }
 }
 #endif

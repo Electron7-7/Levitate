@@ -1,9 +1,10 @@
 #include "e_scape.hpp"
 #include "fonts.hpp"
+#include "sanity.hpp"
 
 std::string Levitate::E_Scape::global_buffer = "";
 unsigned int Levitate::E_Scape::cursor_position = 0;
-Levitate::TextRenderCmd Levitate::E_Scape::main_text_render_command(Levitate::E_Scape::global_buffer, Verdana_ttf.id, 100.0f, 500.0f, 1.0f);
+Levitate::TextRenderCmd Levitate::E_Scape::main_text_render_command(Levitate::E_Scape::global_buffer, Verdana_ttf.ID(), 100.0f, 500.0f, 1.0f);
 
 void Levitate::E_Scape::moveCursorHorizontally(const int by_this_much)
 {
@@ -41,8 +42,10 @@ const std::string Levitate::E_Scape::getGlobalBuffer()
 
 void Levitate::E_Scape::updateAndBufferTextRenderCmd()
 {
+    PRINTDEBUG("Buffering Render Command")
     if(Levitate::E_Scape::main_text_render_command.invalid())
-        Levitate::E_Scape::main_text_render_command.font_name = Verdana_ttf.id;
+        Levitate::E_Scape::main_text_render_command.font_id = Verdana_ttf.ID();
     Levitate::E_Scape::main_text_render_command.text = global_buffer;
     Levitate::Renderer::BufferRenderCommand(Levitate::E_Scape::main_text_render_command);
+    PRINTDEBUG("Done Buffering Render Command")
 }

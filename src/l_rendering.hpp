@@ -26,14 +26,14 @@ namespace Levitate
     struct TextRenderCmd
     {
         std::string text = "";
-        std::string font_name = "";
+        int font_id = 0;
         float position_x = 0.0f;
         float position_y = 0.0f;
         float scale = 1.0f;
         Levitate::Math::vec3 color = Levitate::Math::vec3(1.0f);
 
         TextRenderCmd();
-        TextRenderCmd(const std::string, const std::string_view = Verdana_ttf.id, const float = 0.0f, const float = 0.0f, const float = 1.0f, const Levitate::Math::vec3 = Levitate::Math::vec3(1.0f));
+        TextRenderCmd(const std::string, const int = Verdana_ttf.ID(), const float = 0.0f, const float = 0.0f, const float = 1.0f, const Levitate::Math::vec3 = Levitate::Math::vec3(1.0f));
 
         const bool invalid() const;
     };

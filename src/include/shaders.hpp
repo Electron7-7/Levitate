@@ -1,7 +1,7 @@
 #ifndef LEVITATE_EMBEDDED_SHADERS
 #define LEVITATE_EMBEDDED_SHADERS
 #include <embedded_resource.hpp>
-constexpr EmbeddedResource font_shader_frag("font_shader_frag", 0, R"~(// 2D Font Fragment Shader
+inline const EmbeddedResource font_shader_frag(1, R"~(// 2D Font Fragment Shader
 #version 460 core
 in vec2 vertex_uv;
 
@@ -18,7 +18,7 @@ void main()
     FragColor = vec4(text_color, 1.0f);
 }
 )~");
-constexpr EmbeddedResource font_shader_vert("font_shader_vert", 0, R"~(// 2D Font Vertex Shader
+inline const EmbeddedResource font_shader_vert(2, R"~(// 2D Font Vertex Shader
 #version 460 core
 layout (location = 0) in vec2 _vertex_position;
 layout (location = 1) in vec2 _vertex_uv;

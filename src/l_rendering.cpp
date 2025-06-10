@@ -23,27 +23,31 @@ glm::vec2 Levitate::Renderer::main_window_size;
 //---------
 Levitate::GLShader::GLShader(const EmbeddedResource& vertex_shader, const EmbeddedResource& fragment_shader)
 {
-    std::string vertex_shader_string = vertex_shader.data;
-    std::string fragment_shader_string = fragment_shader.data;
-    const char* vertex_shader_c_string = vertex_shader_string.c_str();
-    const char* fragment_shader_c_string = fragment_shader_string.c_str();
+    const char* vertex_shader_c_string = vertex_shader.StringData();
+    const char* fragment_shader_c_string = fragment_shader.StringData();
+
+    int vert_length = strlen(vertex_shader.StringData());
+    int frag_length = strlen(fragment_shader.StringData());
 
     unsigned int vertex, fragment;
     vertex = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertex, 1, &vertex_shader_c_string, nullptr);
+    glShaderSource(vertex, 1, &vertex_shader_c_string, &vert_length);
     glCompileShader(vertex);
-    errorHandler(vertex);
+    if(!errorHandler(vertex))
+        PRINTERR("Vertex shader compilation error")
 
     fragment = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragment, 1, &fragment_shader_c_string, nullptr);
+    glShaderSource(fragment, 1, &fragment_shader_c_string, &frag_length);
     glCompileShader(fragment);
-    errorHandler(fragment);
+    if(!errorHandler(fragment))
+        PRINTERR("Fragment shader compilation error")
 
     id = glCreateProgram();
     glAttachShader(id, vertex);
     glAttachShader(id, fragment);
     glLinkProgram(id);
-    errorHandler(id, true);
+    if(!errorHandler(id, true))
+        PRINTERR("Shader program linking error")
 
     glDeleteShader(vertex);
     glDeleteShader(fragment);
@@ -69,8 +73,8 @@ const bool Levitate::GLShader::errorHandler(const unsigned int shader_id, const 
         return true;
     }
 
-    glGetShaderiv(shader_id, GL_LINK_STATUS, &v_result);
-    glGetShaderiv(shader_id, GL_INFO_LOG_LENGTH, &info_log_length);
+    glGetProgramiv(shader_id, GL_LINK_STATUS, &v_result);
+    glGetProgramiv(shader_id, GL_INFO_LOG_LENGTH, &info_log_length);
     if(info_log_length > 0)
     {
         std::vector<char> shader_error_message(info_log_length + 1);
@@ -129,8 +133,8 @@ template<> void Levitate::GLShader::setUniform<glm::mat4>(const std::string &nam
 
 // TextRenderCmd
 //--------------
-Levitate::TextRenderCmd::TextRenderCmd(const std::string init_text, const std::string_view init_font_name, const float init_position_x, const float init_position_y, const float init_scale, const Levitate::Math::vec3 init_color)
-: text(init_text), font_name(init_font_name), position_x(init_position_x), position_y(init_position_y), scale(init_scale), color(init_color)
+Levitate::TextRenderCmd::TextRenderCmd(const std::string init_text, const int init_font_id, const float init_position_x, const float init_position_y, const float init_scale, const Levitate::Math::vec3 init_color)
+: text(init_text), font_id(init_font_id), position_x(init_position_x), position_y(init_position_y), scale(init_scale), color(init_color)
 {}
 
 Levitate::TextRenderCmd::TextRenderCmd()
@@ -139,7 +143,7 @@ Levitate::TextRenderCmd::TextRenderCmd()
 
 const bool Levitate::TextRenderCmd::invalid() const
 {
-    return !(Levitate::Text::all_fonts.contains(font_name) /*&& scale >= 0.0f*/); // Todo: check if a negative scale is valid and remove/uncomment the second half of this conditional accordingly
+    return !(Levitate::Text::all_fonts.contains(font_id) /*&& scale >= 0.0f*/); // Todo: check if a negative scale is valid and remove/uncomment the second half of this conditional accordingly
 }
 
 
@@ -176,9 +180,11 @@ const unsigned int Levitate::Renderer::GenerateTexture(const FT_GlyphSlot glyph_
 
 void Levitate::Renderer::BufferRenderCommand(Levitate::TextRenderCmd render_command)
 {
+    PRINTDEBUG("Buffering Render Command")
     if(render_command.invalid())
         return;
     Levitate::Renderer::text_render_commands.insert(Levitate::Renderer::text_render_commands.end(), render_command);
+    PRINTDEBUG("Finished Buffering Render Command")
 }
 
 void Levitate::Renderer::DrawText(const Levitate::GLShader& shader)
@@ -191,7 +197,7 @@ void Levitate::Renderer::DrawText(const Levitate::GLShader& shader)
     for(auto rendercmd_iterator = Levitate::Renderer::text_render_commands.begin() ; rendercmd_iterator != Levitate::Renderer::text_render_commands.end();)
     {
         shader.setUniform("text_color", rendercmd_iterator->color);
-        Font& font = Levitate::Text::all_fonts.at(Verdana_ttf.idString());
+        Font& font = Levitate::Text::all_fonts.at(Verdana_ttf.ID());
         const float init_position_x = rendercmd_iterator->position_x;
         std::string global_buffer = Levitate::E_Scape::getGlobalBuffer();
         for(std::string::const_iterator character_iterator = global_buffer.begin() ; character_iterator != global_buffer.end() ; character_iterator++)
