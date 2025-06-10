@@ -24,3 +24,12 @@ While making this type, I had an idea: what if I could write my own implementati
 Anyways, back to what I was doing.
 
 I really like the structure of my code, but I don't want to fall into unnecessary abstraction and/or organization, so I'm gonna reign it in a lil bit lmfao.
+
+[06/10/25]
+I want to build this into a library and bundle it into Nostalgia as the text editor for the UI (or at least bundle part of it as a library, the rest will be the app "Levitate"). I need to refactor the project to better match my new found knowledge on project structure and I need a working build before I can do that, so I might revert everything back to the commit on 04/18/25, since that's the last working build of Levitate; I'll have to look at the changes I made and decide whether or not it's worth it to do so or to just fix the main issue (that being the shader compilation iirc).
+
+Dude..... the fucking errors had nothing to do with the compiling. They weren't errors. I was incorrectly using 'glGetShaderiv' instead of 'glGetProgramiv' for checking program linking errors.....
+
+SDKLFJSKLDFJSDKLFJKLSDFJKLJSDKLJSDJFJSDKLFJSDKLFJWEIOHJJKL
+
+I think I've been using std::cout very wrong and badly and it's fucking with all the string streams or something to that effect.
