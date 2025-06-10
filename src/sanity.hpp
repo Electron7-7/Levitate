@@ -1,6 +1,6 @@
 #ifndef SANITY
 #define SANITY
-#include <iostream>
+#include <iostream> // IWYU pragma: keep // Used in macro
 
 // https://stackoverflow.com/questions/48426484/concise-way-to-disable-specific-warning-instances-in-clang
 // NOTE: don't fucking use this unless it's for things like "unused #include" (and you're really sure you want to include that file)
