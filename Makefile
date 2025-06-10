@@ -76,9 +76,10 @@ clean_resources:
 	-rm -f $(FONTS)
 
 embed_resources: clean_resources
-	-make -s $(SHADERS)
+	$(eval EMBEDDED_RESOURCE_COUNT=$(shell $(MAKE) -s $(SHADERS)))
+	$(eval EMBEDDED_RESOURCE_COUNT=$(shell echo $$((${EMBEDDED_RESOURCE_COUNT}+1))))
 	$(info Shaders Regenerated)
-	-make -s $(FONTS)
+	$(shell $(MAKE) -s EMBEDDED_RESOURCE_COUNT=$(EMBEDDED_RESOURCE_COUNT) $(FONTS))
 	$(info Fonts Regenerated)
 
 $(O)/%.opp: $(SRC)/%.cpp
@@ -87,13 +88,20 @@ $(O)/%.opp: $(SRC)/%.cpp
 $(O)/%.o: $(SRC)/%.c
 	$(CC) $(CCFLAGS) $(INCLUDES) -c $< -o $@
 
+export EMBEDDED_RESOURCE_COUNT=0
+
 $(SHADERS):
 	$(shell printf "#ifndef LEVITATE_EMBEDDED_SHADERS\n#define LEVITATE_EMBEDDED_SHADERS\n#include <embedded_resource.hpp>\n" > $(SHADERS))
-# 	$(foreach file,$(SHDRS), $(shell printf "constexpr EmbeddedResource $(subst .,_,$(notdir $(file)))(\"$(subst .,_,$(notdir $(file)))\"," >> $(SHADERS) && xxd -n X -i $(file) | sed -zEe 's/unsigned char X\[\] = \{\n  (((\w|[0-9])+(,( |\n  )|))+)\n\};\n(unsigned int X_len = ([0-9]+);)/\7, "\1"\);/g' -zEe 's/(\n  | )//g' >> $(SHADERS)))
-	$(foreach file,$(SHDRS), $(shell printf "constexpr EmbeddedResource $(subst .,_,$(notdir $(file)))(\"$(subst .,_,$(notdir $(file)))\", 0, R\"~(" >> $(SHADERS) && cat $(file) >> $(SHADERS) && printf ")~\");\n" >> $(SHADERS)))
+# 	$(foreach file,$(SHDRS), $(eval EMBEDDED_RESOURCE_COUNT:=$(shell echo $$((${EMBEDDED_RESOURCE_COUNT}+1))))$(shell printf "constexpr const char* raw_$(subst .,_,$(notdir $(file))) = R\"~(" >> $(SHADERS) && cat $(file) >> $(SHADERS) && printf ")~\";\nconstexpr EmbeddedResource $(subst .,_,$(notdir $(file)))(${EMBEDDED_RESOURCE_COUNT}, raw_$(subst .,_,$(notdir $(file))));\n" >> $(SHADERS)))
+	$(foreach file,$(SHDRS), $(eval EMBEDDED_RESOURCE_COUNT:=$(shell echo $$((${EMBEDDED_RESOURCE_COUNT}+1))))$(shell printf "inline const EmbeddedResource $(subst .,_,$(notdir $(file)))(${EMBEDDED_RESOURCE_COUNT}, R\"~(" >> $(SHADERS) && cat $(file) >> $(SHADERS) && printf ")~\");\n" >> $(SHADERS)))
 	$(shell printf "#endif" >> $(SHADERS))
+	@ echo -e $(EMBEDDED_RESOURCE_COUNT)
 
 $(FONTS):
 	$(shell printf "#ifndef LEVITATE_EMBEDDED_FONTS\n#define LEVITATE_EMBEDDED_FONTS\n#include <embedded_resource.hpp>\n" > $(FONTS))
-	$(foreach file,$(FNTS), $(shell printf "constexpr EmbeddedResource $(subst .,_,$(notdir $(file)))(\"$(subst .,_,$(notdir $(file)))\"," >> $(FONTS) && xxd -n X -i $(file) | sed -zEe 's/unsigned char X\[\] = \{\n  (((\w|[0-9])+(,( |\n  )|))+)\n\};\n(unsigned int X_len = ([0-9]+);)/\7, "\1"\);/g' -zEe 's/(\n  | )//g' >> $(FONTS)))
+	$(foreach file,$(FNTS), $(eval EMBEDDED_RESOURCE_COUNT:=$(shell echo $$(($(EMBEDDED_RESOURCE_COUNT)+1))))$(shell xxd -n raw_$(subst .,_,$(notdir $(file))) -i $(file) | sed -zEe 's/unsigned/const unsigned/g' >> $(FONTS) && printf "constexpr EmbeddedResource $(subst .,_,$(notdir $(file)))(${EMBEDDED_RESOURCE_COUNT}, raw_$(subst .,_,$(notdir $(file)))_len, raw_$(subst .,_,$(notdir $(file))));\n" >> $(FONTS)))
 	$(shell printf "#endif" >> $(FONTS))
+
+
+
+# 	$(foreach file,$(FNTS), $(eval EMBEDDED_RESOURCE_COUNT=$(shell echo $$(($(EMBEDDED_RESOURCE_COUNT)+1))));$(shell printf "constexpr EmbeddedResource $(subst .,_,$(notdir $(file)))(${EMBEDDED_RESOURCE_COUNT}," >> $(FONTS) && xxd -n X -i $(file) | sed -zEe 's/unsigned char X\[\] = \{\n  (((\w|[0-9])+(,( |\n  )|))+)\n\};\n(unsigned int X_len = ([0-9]+);)/\7, "\1"\);/g' -zEe 's/(\n  | )//g' >> $(FONTS)))
