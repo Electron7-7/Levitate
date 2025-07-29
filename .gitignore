@@ -1,4 +1,9 @@
-*.sublime-project
-*.sublime-workspace
-compile_commands.json
-.cache/*
+# Clangd
+.cache/
+compile_commands*json
+
+# Build
+build/
+
+# Sublime
+*.sublime*
