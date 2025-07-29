@@ -33,3 +33,8 @@ Dude..... the fucking errors had nothing to do with the compiling. They weren't 
 SDKLFJSKLDFJSDKLFJKLSDFJKLJSDKLJSDJFJSDKLFJSDKLFJWEIOHJJKL
 
 I think I've been using std::cout very wrong and badly and it's fucking with all the string streams or something to that effect.
+
+[07/29/25]
+I'm gonna redo this whole project, starting from the last working commit, which just so happens to be a working prototype. I need to forgo the GUI and OpenGL and all that shit and focus on the text stream *first*. The GUI should be a layer on top of a working text editor.
+
+I'm also gonna use `makemake` to generate myself a better Makefile.
