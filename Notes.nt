@@ -38,3 +38,5 @@ I think I've been using std::cout very wrong and badly and it's fucking with all
 I'm gonna redo this whole project, starting from the last working commit, which just so happens to be a working prototype. I need to forgo the GUI and OpenGL and all that shit and focus on the text stream *first*. The GUI should be a layer on top of a working text editor.
 
 I'm also gonna use `makemake` to generate myself a better Makefile.
+
+Well, that took longer than expected. I ended up needing to do a total overhaul of the build system; I got hella sidetracked on the embedded resources (mainly the colored printouts, lmfao) and most of my time was spent there. I ended up taking an hour to make a small update to `makemake`, adding the prototype version of the `--update-source-dirs|-u` flag. I did this because I had made some changes to the Makefile and knew I'd be overhauling the project's file structure.
