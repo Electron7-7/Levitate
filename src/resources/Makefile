@@ -13,8 +13,8 @@ define printout
 printf "$(DEFAULT)::Generating Embedded $(1) ($(CYAN)$(notdir $(2))$(DEFAULT), $(CYAN)$(notdir $(3))$(DEFAULT))$(RESET)\n"
 endef
 
-define cleaning
-@ printf "$(RED)Cleaning $(subst ../,src/,$(1))$(RESET)\n"
+define cleaned
+@ printf "$(RESET)::Cleaned $(RED)$(subst ../,src/,$(1))$(RESET)\n"
 endef
 
 OUT_DIR    := ../embedded
@@ -39,25 +39,26 @@ FONTS_OUT_H   := $(OUT_DIR)/$(FONTS_H)
 
 all:
 	@ $(MAKE) -s glsl fonts
-	@ printf "$(DEFAULT)::Embedded Resources Directory: $(GREEN)$(OUT_DIR:../%=src/%)/$(RESET)\n"
+	@ printf "$(DEFAULT)::Embedded Resources Directory - $(GREEN)$(OUT_DIR:../%=src/%)$(RESET)\n"
 
 build:
 	@ -mkdir -p $(OUT_DIR)
 
-# FIXME: Add more focused clean targets
 clean:
-	$(call cleaning,$(OUT_DIR)/)
 	@ -rm -rf $(OUT_DIR)
+	$(call cleaned,$(OUT_DIR))
 
 clean_glsl:
-	$(call cleaning,$(GLSL_OUT_C))
 	@ -rm -f $(GLSL_OUT_C)
-	$(call cleaning,$(GLSL_OUT_H))
+	$(call cleaned,$(GLSL_OUT_C))
 	@ -rm -f $(GLSL_OUT_H)
+	$(call cleaned,$(GLSL_OUT_H))
 
 clean_fonts:
-	$(call cleaning,$(FONTS_OUT_DIR)/)
-	@ -rm -rf $(FONTS_OUT_DIR)
+	@ -rm -f $(FONTS_OUT_C)
+	$(call cleaned,$(FONTS_OUT_C))
+	@ -rm -f $(FONTS_OUT_H)
+	$(call cleaned,$(FONTS_OUT_H))
 
 glsl: $(GLSL_OUT_C) | build
 

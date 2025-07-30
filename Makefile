@@ -22,7 +22,7 @@ FLAGS_LINUX           := # Nothing yet
 LDFLAGS_LINUX         := -l glfw -l curses -l freetype
 LDFLAGS_WINDOWS       := -l glfw -l curses -l freetype
 
-INCLUDE := -I src/thirdparty -I/usr/include/freetype2 -I/usr/include/libpng16 -I/usr/include/harfbuzz -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include -I/usr/include/sysprof-6
+INCLUDE := -I src -I src/thirdparty -I/usr/include/freetype2 -I/usr/include/libpng16 -I/usr/include/harfbuzz -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include -I/usr/include/sysprof-6
 
 DIR_ROOT    := build
 DIR_LINUX   := Linux
@@ -66,15 +66,19 @@ VPATH := $(SRC_DIRS)
 
 SRC := src
 
-SRC_DIRS :=         \
-    $(SRC)          \
-    $(SRC)/embedded \
+SRC_DIRS :=                \
+    $(SRC)/embedded        \
+    $(SRC)/gui             \
+    $(SRC)/gui/rendering   \
+    $(SRC)/system          \
+    $(SRC)/text_engine     \
+    $(SRC)/thirdparty/glad \
 
 
 RESOURCES := $(SRC)/resources
 
-CC_SRCS  := $(foreach directory,$(SRC_DIRS),$(wildcard $(directory)/*.c))
-CXX_SRCS := $(foreach directory,$(SRC_DIRS),$(wildcard $(directory)/*.cpp))
+CC_SRCS  ?= $(foreach directory,$(SRC_DIRS),$(wildcard $(directory)/*.c))
+CXX_SRCS ?= $(foreach directory,$(SRC_DIRS),$(wildcard $(directory)/*.cpp))
 
 export CC_OBJS  ?= $(addprefix $(BUILD_OBJS)/,$(subst .c,.o,$(CC_SRCS:$(SRC)/%=%)))
 export CXX_OBJS ?= $(addprefix $(BUILD_OBJS)/,$(subst .cpp,.obj,$(CXX_SRCS:$(SRC)/%=%)))
@@ -139,6 +143,7 @@ build_dir:
 clean:
 	@ -rm -rf $(DIR_ROOT)
 	@ printf "::Cleaned $(RED)$(DIR_ROOT)/$(RESET)\n"
+	@ $(MAKE) -C $(RESOURCES) -s clean
 
 disable_colors:
 	$(eval RESET   := "")
