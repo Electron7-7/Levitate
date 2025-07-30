@@ -1,104 +1,169 @@
-CXX = clang++
-CC = clang
+LINUX_CXX := clang++
+LINUX_CC  := clang
 
-CXXFLAGS = -g -Wall -std=c++20
-CCFLAGS = -g -Wall -Wextra
+ifneq ($(OS),Windows_NT)
+	WINDOWS_CXX := x86_64-w64-mingw32-g++
+	WINDOWS_CC  := x86_64-w64-mingw32-gcc
+else
+	WINDOWS_CXX := g++
+	WINDOWS_CC  := gcc
+endif
 
-INCLUDES = -I src/include -I/usr/include/freetype2 -I/usr/include/libpng16 -I/usr/include/harfbuzz -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include -I/usr/include/sysprof-6
-LIBS = -l glfw -l curses -l freetype
+FLAGS_DEBUG_COMMON    := -g -Wall -O0 -D DEBUGGING
+FLAGS_DEBUG_LINUX     := -fsanitize=address
+FLAGS_DEBUG_WINDOWS   := # Nothing yet
+FLAGS_RELEASE_COMMON  := -O3
+FLAGS_RELEASE_WINDOWS := # Nothing yet
+FLAGS_RELEASE_LINUX   := # Nothing yet
+FLAGS_CXX_COMMON      := -std=c++20
+FLAGS_CC_COMMON       := # Nothing yet
+FLAGS_WINDOWS         := -mwindows -static
+FLAGS_LINUX           := # Nothing yet
+LDFLAGS_LINUX         := -l glfw -l curses -l freetype
+LDFLAGS_WINDOWS       := -l glfw -l curses -l freetype
 
-LINUX = Levitate_$(shell uname -s)_$(shell uname -r)_$(shell uname -m)
-NAME = ""
+INCLUDE := -I src/thirdparty -I/usr/include/freetype2 -I/usr/include/libpng16 -I/usr/include/harfbuzz -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include -I/usr/include/sysprof-6
+
+DIR_ROOT    := build
+DIR_LINUX   := Linux
+DIR_WINDOWS := Windows
+DIR_DEBUG   := Debug
+DIR_RELEASE := Release
+DIR_OBJS    := .objs
+
+NAME_BASE := levitate
+
+# LINUX
+ifneq ($(OS),Windows_NT)
+	export NAME          ?= $(NAME_BASE)
+	export BUILD_ARCH    ?= $(DIR_LINUX)
+	export DEBUG_FLAGS   ?= $(FLAGS_DEBUG_COMMON) $(FLAGS_DEBUG_LINUX)
+	export RELEASE_FLAGS ?= $(FLAGS_RELEASE_COMMON) $(FLAGS_RELEASE_LINUX)
+	export CXX_FLAGS     ?= $(FLAGS_CXX_COMMON) $(FLAGS_LINUX)
+	export CC_FLAGS      ?= $(FLAGS_CC_COMMON) $(FLAGS_LINUX)
+	export LD_FLAGS      ?= $(LDFLAGS_LINUX)
+	export CXX_COMPILER  ?= $(LINUX_CXX)
+	export C_COMPILER    ?= $(LINUX_CC)
+else # WINDOWS
+	export NAME          ?= $(NAME_BASE).exe
+	export BUILD_ARCH    ?= $(DIR_WINDOWS)
+	export DEBUG_FLAGS   ?= $(FLAGS_DEBUG_COMMON) $(FLAGS_DEBUG_WINDOWS)
+	export RELEASE_FLAGS ?= $(FLAGS_RELEASE_COMMON) $(FLAGS_RELEASE_WINDOWS)
+	export CXX_FLAGS     ?= $(FLAGS_CXX_COMMON) $(FLAGS_WINDOWS)
+	export CC_FLAGS      ?= $(FLAGS_CC_COMMON) $(FLAGS_WINDOWS)
+	export LD_FLAGS      ?= $(LDFLAGS_WINDOWS)
+	export CXX_COMPILER  ?= $(WINDOWS_CXX)
+	export C_COMPILER    ?= $(WINDOWS_CC)
+endif
+
+export BUILD_VERSION ?= $(DIR_RELEASE)
+export VERSION_FLAGS ?= $(RELEASE_FLAGS)
+
+export BUILD_DIR  ?= $(DIR_ROOT)/$(BUILD_ARCH)/$(BUILD_VERSION)
+export BUILD_OBJS ?= $(BUILD_DIR)/$(DIR_OBJS)
+
+VPATH := $(SRC_DIRS)
 
 SRC := src
 
-S = $(SRC)/shaders
-SHADERS_C = $(SRC)/shaders.cpp
-SHADERS_H = $(SRC)/include/shaders.hpp
-SHDRS = $(wildcard $(S)/*.glsl)
+SRC_DIRS :=         \
+    $(SRC)          \
+    $(SRC)/embedded \
 
-F = $(SRC)/fonts
-FONTS_C = $(SRC)/fonts.cpp
-FONTS_H = $(SRC)/include/fonts.hpp
-FNTS =                     \
-	$(wildcard $(F)/*.ttf) \
-	$(wildcard $(F)/*.otf)
 
-O = build
+RESOURCES := $(SRC)/resources
 
-CLEAN_OBJS =    \
-	$(O)/glad.o
+CC_SRCS  := $(foreach directory,$(SRC_DIRS),$(wildcard $(directory)/*.c))
+CXX_SRCS := $(foreach directory,$(SRC_DIRS),$(wildcard $(directory)/*.cpp))
 
-DIRTY_OBJS = 			 \
-	$(O)/shaders.opp     \
-	$(O)/fonts.opp       \
-	$(O)/l_input.opp     \
-	$(O)/l_rendering.opp \
-	$(O)/e_scape.opp
+export CC_OBJS  ?= $(addprefix $(BUILD_OBJS)/,$(subst .c,.o,$(CC_SRCS:$(SRC)/%=%)))
+export CXX_OBJS ?= $(addprefix $(BUILD_OBJS)/,$(subst .cpp,.obj,$(CXX_SRCS:$(SRC)/%=%)))
 
-OBJS =            \
-	$(CLEAN_OBJS) \
-	$(DIRTY_OBJS)
+export RESET   ?= \\x1b[0m
+export BLACK   ?= \\x1b[1;30m
+export RED     ?= \\x1b[1;31m
+export GREEN   ?= \\x1b[1;32m
+export YELLOW  ?= \\x1b[1;33m
+export BLUE    ?= \\x1b[1;34m
+export MAGENTA ?= \\x1b[1;35m
+export CYAN    ?= \\x1b[1;36m
+export WHITE   ?= \\x1b[1;37m
+export DEFAULT ?= \\x1b[1;39m
 
-PHONY = all clean dirty_clean debug release linux test
+.PHONY: build linux windows release debug build_dir clean disable_colors
 
-all: release linux
+build: resources
+	@ printf "$(DEFAULT)::Architecture - $(BLUE)$(BUILD_ARCH)$(RESET)\n"
+	@ printf "$(DEFAULT)::Version - $(BLUE)$(BUILD_VERSION)$(RESET)\n"
+	@ printf "$(DEFAULT)::C Compile Command - $(YELLOW)$(C_COMPILER) $(CC_FLAGS) $(VERSION_FLAGS) $(INCLUDE)$(RESET)\n"
+	@ printf "$(DEFAULT)::C++ Compile Command - $(YELLOW)$(CXX_COMPILER) $(CXX_FLAGS) $(VERSION_FLAGS) $(INCLUDE)$(RESET)\n"
+	@ $(MAKE) -s $(BUILD_DIR)/$(NAME)
+	@ printf "$(DEFAULT)::Program Location - $(GREEN)$(DIR_ROOT)/$(BUILD_ARCH)/$(BUILD_VERSION)/$(NAME)$(RESET)\n"
 
-clean: dirty_clean
-	-rm -f $(CLEAN_OBJS)
+resources: ;@:
+	@ $(MAKE) -s -C $(RESOURCES)
 
-dirty_clean:
-	-rm -f $(DIRTY_OBJS)
-	-rm -f build/*.tmp
-	-rm -f build/LevitateDebug
-	-rm -f build/$(LINUX)
+linux: ;@:
+	$(eval NAME          = $(NAME_BASE))
+	$(eval BUILD_ARCH    = $(DIR_LINUX))
+	$(eval DEBUG_FLAGS   = $(FLAGS_DEBUG_COMMON) $(FLAGS_DEBUG_LINUX))
+	$(eval RELEASE_FLAGS = $(FLAGS_RELEASE_COMMON) $(FLAGS_RELEASE_LINUX))
+	$(eval CXX_FLAGS     = $(FLAGS_CXX_COMMON) $(FLAGS_LINUX))
+	$(eval CC_FLAGS      = $(FLAGS_CC_COMMON) $(FLAGS_LINUX))
+	$(eval LD_FLAGS      = $(LDFLAGS_LINUX))
+	$(eval CXX_COMPILER  = $(LINUX_CXX))
+	$(eval C_COMPILER    = $(LINUX_CC))
 
-test:
-	./$(O)/$(NAME)
+windows: ;@:
+	$(eval NAME          = $(NAME_BASE).exe)
+	$(eval BUILD_ARCH    = $(DIR_WINDOWS))
+	$(eval DEBUG_FLAGS   = $(FLAGS_DEBUG_COMMON) $(FLAGS_DEBUG_WINDOWS))
+	$(eval RELEASE_FLAGS = $(FLAGS_RELEASE_COMMON) $(FLAGS_RELEASE_WINDOWS))
+	$(eval CXX_FLAGS     = $(FLAGS_CXX_COMMON) $(FLAGS_WINDOWS))
+	$(eval CC_FLAGS      = $(FLAGS_CC_COMMON) $(FLAGS_WINDOWS))
+	$(eval LD_FLAGS      = $(LDFLAGS_WINDOWS))
+	$(eval CXX_COMPILER  = $(WINDOWS_CXX))
+	$(eval C_COMPILER    = $(WINDOWS_CC))
 
-debug: embed_resources
-	$(info Version: Debug)
-	$(eval LINUX := LevitateDebug)
-	$(eval CXXFLAGS += -D LEVITATE_DEBUG)
-	-rm -f build/*.tmp
+release: ;@:
+	$(eval VERSION_FLAGS = $(RELEASE_FLAGS))
+	$(eval BUILD_VERSION = $(DIR_RELEASE))
 
-release: embed_resources
-	$(info Version: Release)
-	-rm -f build/*.tmp
+debug: ;@:
+	$(eval VERSION_FLAGS = $(DEBUG_FLAGS))
+	$(eval BUILD_VERSION = $(DIR_DEBUG))
 
-linux: $(OBJS) $(O)/main.opp
-	$(eval NAME := $(LINUX))
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(OBJS) $(O)/main.opp -o $(O)/$(NAME) $(LIBS)
+build_dir:
+	@ -mkdir -p $(BUILD_DIR) $(BUILD_OBJS)
 
-clean_resources:
-	-rm -f $(SHADERS_C) $(SHADERS_H)
-	-rm -f $(FONTS_C) $(FONTS_H)
+clean:
+	@ -rm -rf $(DIR_ROOT)
+	@ printf "::Cleaned $(RED)$(DIR_ROOT)/$(RESET)\n"
 
-embed_resources: clean_resources
-	-make -s $(SHADERS_C)
-	$(info Shaders Regenerated)
-	-make -s $(FONTS_C)
-	$(info Fonts Regenerated)
+disable_colors:
+	$(eval RESET   := "")
+	$(eval BLACK   := "")
+	$(eval RED     := "")
+	$(eval GREEN   := "")
+	$(eval YELLOW  := "")
+	$(eval BLUE    := "")
+	$(eval MAGENTA := "")
+	$(eval CYAN    := "")
+	$(eval WHITE   := "")
+	$(eval DEFAULT := "")
+	@ printf "::Output colors disabled\n"
 
-$(O)/%.opp: $(SRC)/%.cpp
-	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
+$(BUILD_OBJS)/%.obj: $(SRC)/%.cpp | build_dir
+	@ printf "::Compiling $(BLUE)$@$(RESET)\n"
+	@ -mkdir -p $(dir $@)
+	$(CXX_COMPILER) $(CXX_FLAGS) $(VERSION_FLAGS) $(INCLUDE) -c $< -o $@
 
-$(O)/%.o: $(SRC)/%.c
-	$(CC) $(CCFLAGS) $(INCLUDES) -c $< -o $@
+$(BUILD_OBJS)/%.o: $(SRC)/%.c | build_dir
+	@ printf "::Compiling $(BLUE)$@$(RESET)\n"
+	@ -mkdir -p $(dir $@)
+	$(C_COMPILER) $(CC_FLAGS) $(VERSION_FLAGS) $(INCLUDE) -c $< -o $@
 
-$(SHADERS_C): $(SHADERS_H)
-	$(shell printf "#include <string>\n" > $(SHADERS_C))
-	$(foreach file,$(shell ls $(S)),$(shell printf "std::string $(subst .,_,$(file:$(S)/%=%)) = R\"~(\n" >> $(SHADERS_C) && cat $(S)/$(file) >> $(SHADERS_C) && printf "\n)~\";\n" >> $(SHADERS_C)))
+$(BUILD_DIR)/$(NAME): $(CC_OBJS) $(CXX_OBJS)
+	@ printf "::Linking $(CYAN)$@$(RESET)\n"
+	$(CXX_COMPILER) $(CXX_FLAGS) $(VERSION_FLAGS) $(INCLUDE) $^ -o $@ $(LD_FLAGS)
 
-$(SHADERS_H):
-	$(shell printf "#ifndef GRAPHX_EMBEDDED_SHADERS\n#define GRAPHX_EMBEDDED_SHADERS\n#include <string>\n" > $(SHADERS_H))
-	$(foreach file,$(shell ls $(S)),$(shell printf "extern std::string $(subst .,_,$(file:$(S)/%=%));\n" >> $(SHADERS_H)))
-	$(shell printf "#endif" >> $(SHADERS_H))
-
-$(FONTS_C): $(FONTS_H)
-	$(foreach file,$(FNTS),$(shell xxd -b -n $(file:$(F)/%=%) -i $(file) >> $(FONTS_C)))
-
-$(FONTS_H):
-	$(shell printf "#ifndef GRAPHX_EMBEDDED_FONTS\n#define GRAPHX_EMBEDDED_FONTS\n#include <string>\n" > $(FONTS_H))
-	$(foreach filename,$(FNTS), $(shell printf "\n#define $(subst .,_,$(basename $(filename:$(F)/%=%))) std::string(\"$(subst .,_,$(filename:$(I)/%=%))\")\nextern unsigned char $(subst .,_,$(filename:$(F)/%=%))[];\nextern unsigned int $(subst .,_,$(filename:$(F)/%=%))_len;\n" >> $(FONTS_H)))
-	$(shell printf "#endif" >> $(FONTS_H))
