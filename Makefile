@@ -22,7 +22,7 @@ FLAGS_LINUX           := # Nothing yet
 LDFLAGS_LINUX         := -l glfw -l curses -l freetype
 LDFLAGS_WINDOWS       := -l glfw -l curses -l freetype
 
-INCLUDE := -I src -I src/thirdparty -I/usr/include/freetype2 -I/usr/include/libpng16 -I/usr/include/harfbuzz -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include -I/usr/include/sysprof-6
+INCLUDE := -I src -I src/thirdparty -I/usr/include/freetype2
 
 DIR_ROOT    := build
 DIR_LINUX   := Linux
