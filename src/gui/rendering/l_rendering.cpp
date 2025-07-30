@@ -1,6 +1,6 @@
 #include "l_rendering.hpp"
-#include "sanity.hpp"
-#include <glad/glad.h>
+#include "common/labels.hpp"
+#include "glad/glad.h"
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <vector>
@@ -16,7 +16,7 @@ void GLShaderErrorHandler(const unsigned int shader_id)
     {
         std::vector<char> shader_error_message(info_log_length + 1);
         glGetShaderInfoLog(shader_id, info_log_length, nullptr, shader_error_message.data());
-        PRINTERR(std::string("GLSL Shader Compilation Error(s):\n") + shader_error_message.data())
+        printf("%s GLSL Shader Compilation Error(s):%s%s\n", ERROR, shader_error_message.data(), COLOR_RESET);
     }
 }
 

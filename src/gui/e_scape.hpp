@@ -1,6 +1,6 @@
 #ifndef LEVITATE_EDITOR_LANDSCAPE
 #define LEVITATE_EDITOR_LANDSCAPE
-#include "l_rendering.hpp"
+#include "rendering/l_rendering.hpp"
 #include <bitset>
 #include <glm/glm.hpp>
 

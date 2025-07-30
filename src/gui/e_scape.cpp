@@ -1,8 +1,9 @@
 #include "e_scape.hpp"
-#include "l_input.hpp"
-#include "sanity.hpp"
-#include <fonts.hpp>
-#include <glad/glad.h>
+#include "glad/glad.h"
+#include "embedded/fonts.h"
+#include "common/labels.hpp"
+#include "text_engine/l_input.hpp"
+
 #include <glm/ext/matrix_clip_space.hpp>
 #include <ft2build.h>
 #include FT_FREETYPE_H
@@ -16,11 +17,11 @@ FT_Library freetype;
 void QuickShittySetupFreetype()
 {
     if(FT_Init_FreeType(&freetype))
-        PRINTERR("FreeType library failed to initialize!")
+        printf("%s FreeType library failed to initialize!%s\n", ERROR, COLOR_RESET);
 
     FT_Face new_face;
 
-    if(FT_New_Memory_Face(freetype, Verdana_ttf, Verdana_ttf_len, 0, &new_face))
+    if(FT_New_Memory_Face(freetype, font_Verdana_ttf, font_Verdana_ttf_len, 0, &new_face))
         return;
 
     FT_Set_Pixel_Sizes(new_face, 0, 48);
@@ -32,7 +33,7 @@ void QuickShittySetupFreetype()
     {
         if(FT_Load_Char(new_face, character, FT_LOAD_RENDER))
         {
-            PRINTERR("FreeType failed to load glyph (character: " << character << ")")
+            printf("%s FreeType failed to load glyph (character: %c)%s\n", ERROR, character, COLOR_RESET);
             continue;
         }
 

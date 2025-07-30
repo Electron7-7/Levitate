@@ -1,16 +1,16 @@
 #define GLM_ENABLE_EXPERIMENTAL
+#include "glad/glad.h"
+#include "common/labels.hpp"
+#include "text_engine/l_input.hpp"
+#include "gui/rendering/l_rendering.hpp"
+#include "gui/e_scape.hpp"
+#include "embedded/glsl.hpp"
+
 #include <curses.h>
-#include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <glm/fwd.hpp>
 #include <glm/glm.hpp>
 #include <glm/gtx/string_cast.hpp>
-#include <shaders.hpp>
-#include <fonts.hpp>
-#include "sanity.hpp"
-#include "l_input.hpp"
-#include "l_rendering.hpp"
-#include "e_scape.hpp"
 
 glm::vec2 main_window_size(1280.0f, 720.0f);
 
@@ -31,13 +31,13 @@ int main()
 
 	if(main_window == nullptr)
 	{
-		PRINTERR("Failed to create GLFW window!")
+		printf("%s Failed to create GLFW window!%s\n", ERROR, COLOR_RESET);
 		glfwTerminate();
 	}
 
 	if(!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
-		PRINTERR("Failed to initialize GLAD!")
-	
+		printf("%s Failed to initialize GLAD!%s\n", ERROR, COLOR_RESET);
+
 	const GLFWvidmode *primary_monitor_video_mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
 	int primary_monitor_xposition = 0;
 	int primary_monitor_yposition = 0;
@@ -51,7 +51,7 @@ int main()
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_DEBUG_OUTPUT);
 
-	GLShader temp_shader(font_vert, font_frag);
+	GLShader temp_shader(glsl_font_vert, glsl_font_frag);
 	temp_shader_pointer = &temp_shader;
 
 	glGenVertexArrays(1, &TEMPORARY_VAO);
