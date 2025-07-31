@@ -32,4 +32,5 @@ void main()
     if(glyph_shape < 0.5)
         discard;
     FragColor = vec4(text_color, 1.0f);
-})";
+}
+)";
