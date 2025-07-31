@@ -60,7 +60,7 @@ int main(int argc, char** argv)
     {
         glClearColor(0.85f, 0.8f, 0.95f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        QuickShittyPrintToScreen(0.0f, MainWindow::Height - 50.0f, 1, glm::vec3(1.0f), "DejaVuSansMono");
+        QuickShittyPrintToScreen(10.0f, MainWindow::Height - 50.0f, 1, glm::vec3(1.0f), "DejaVuSansMono");
         glfwSwapBuffers(main_window);
         glfwPollEvents();
     }
@@ -71,7 +71,7 @@ int main(int argc, char** argv)
 
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
-    if(action != GLFW_PRESS && GLFW_REPEAT)
+    if(action != GLFW_PRESS && action != GLFW_REPEAT)
         return;
 
     switch(key)
