@@ -67,20 +67,25 @@ fonts: $(FONTS_OUT_C) | build
 %.print: %
 	@ printf "$(RESET)::Embedding: $(YELLOW)src/resources/$<$(RESET)\n"
 
+# GLSL Shader name function
+define glsl_name
+glsl_$(subst .,_,$(notdir $(1)))
+endef
+
 $(GLSL_OUT_C): $(GLSL_OUT_H) | build
 	@ $(call printout,GLSL Shaders,$@,$<)
 	@ $(MAKE) -s $(GLSL_SRCS:%=%.print)
 	$(shell echo -ne "#include \"$(GLSL_H)\"\n" > $(GLSL_OUT_C))
-	$(foreach shader,$(GLSL_SRCS),$(shell echo -ne "\nconst char* glsl_$(subst .,_,$(notdir $(shader))) =\nR\"(" >> $(GLSL_OUT_C) && cat $(shader) >> $(GLSL_OUT_C) && echo -ne ")\";\n" >> $(GLSL_OUT_C)))
+	$(foreach shader,$(GLSL_SRCS),$(shell echo -ne "\nconst char* $(call glsl_name,$(shader)) =\nR\"(" >> $(GLSL_OUT_C) && cat $(shader) >> $(GLSL_OUT_C) && echo -ne ")\";\n" >> $(GLSL_OUT_C)))
 
 $(GLSL_OUT_H): | build
 	$(shell echo -e "#ifndef $(GLSL_H_GRD)\n#define $(GLSL_H_GRD)\n" > $(GLSL_OUT_H))	
-	$(foreach shader,$(GLSL_SRCS),$(shell echo -e "extern const char* glsl_$(subst .,_,$(notdir $(shader)));" >> $(GLSL_OUT_H)))
+	$(foreach shader,$(GLSL_SRCS),$(shell echo -e "extern const char* $(call glsl_name,$(shader));" >> $(GLSL_OUT_H)))
 	$(shell echo -e "\n#endif // $(GLSL_H_GRD)" >> $(GLSL_OUT_H))
 
 # Font name function
 define font_name
-font_$(subst .,_,$(notdir $(1)))
+font_$(subst -,_,$(subst .,_,$(notdir $(1))))
 endef
 
 $(FONTS_OUT_C): $(FONTS_OUT_H) | build
