@@ -73,6 +73,41 @@ void QuickShittySetupFont(const char* font_name, unsigned char font_data[], unsi
     glEnableVertexAttribArray(1);
 }
 
+void RenderCharacter(float& position_x, float position_y, const int scale, const Font& font, const Character& character)
+{
+    float x_position = position_x + character.bearing_x * scale;
+    float y_position = position_y - (character.size_y - character.bearing_y) * scale;
+    float width = character.size_x * scale;
+    float height = character.size_y * scale;
+    float vertices[24] =
+    {
+        x_position        , y_position + height, 0.0f, 0.0f,
+        x_position        , y_position         , 0.0f, 1.0f,
+        x_position + width, y_position         , 1.0f, 1.0f,
+        x_position        , y_position + height, 0.0f, 0.0f,
+        x_position + width, y_position         , 1.0f, 1.0f,
+        x_position + width, y_position + height, 1.0f, 0.0f,
+    };
+
+    glBindVertexArray(TEMPORARY_VAO);
+    glBindTextureUnit(0, character.texture_id);
+    glBindBuffer(GL_ARRAY_BUFFER, font.VBO);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), &vertices);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(0));
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+    glEnableVertexAttribArray(0);
+    glEnableVertexAttribArray(1);
+    glUseProgram(temp_shader_pointer->GetID());
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+}
+
+void try_DrawCursor(float position_x, float position_y, const int scale, Font& font)
+{
+    Character& cursor = font.character_set.at('|');
+    float cursor_position_x = position_x - ((cursor.size_x * scale) / 2.0f) - cursor.bearing_x;
+    RenderCharacter(cursor_position_x, position_y, scale, font, cursor);
+}
+
 void QuickShittyPrintToScreen(float position_x, float position_y, const int scale, glm::vec3 color, const char* font_name)
 {
     glEnable(GL_BLEND);
@@ -88,42 +123,31 @@ void QuickShittyPrintToScreen(float position_x, float position_y, const int scal
     unsigned int column_number = 0;
     for(std::string::const_iterator character_iterator = global_buffer.begin() ; character_iterator != global_buffer.end() ; character_iterator++)
     {
-        ++column_number;
         if(*character_iterator == '\n')
         {
+            if(row_number == GetCaretLine() && column_number == GetCaretColumn())
+                try_DrawCursor(position_x, position_y, scale, font);
+        #ifdef DEBUGGING
+            Character& new_line = font.character_set.at('$');
+            RenderCharacter(position_x, position_y, scale, font, new_line);
+        #endif
             ++row_number;
+            column_number = 0;
             position_x = init_position_x;
             position_y -= font.character_set.at('0').size_y * scale;
             continue;
         }
-        Character &character = font.character_set.at(*character_iterator);
-        float x_position = position_x + character.bearing_x * scale;
-        float y_position = position_y - (character.size_y - character.bearing_y) * scale;
-        float width = character.size_x * scale;
-        float height = character.size_y * scale;
-        float vertices[24] =
-        {
-            x_position        , y_position + height, 0.0f, 0.0f,
-            x_position        , y_position         , 0.0f, 1.0f,
-            x_position + width, y_position         , 1.0f, 1.0f,
-            x_position        , y_position + height, 0.0f, 0.0f,
-            x_position + width, y_position         , 1.0f, 1.0f,
-            x_position + width, y_position + height, 1.0f, 0.0f,
-        };
 
-        glBindVertexArray(TEMPORARY_VAO);
-        glBindTextureUnit(0, character.texture_id);
-        glBindBuffer(GL_ARRAY_BUFFER, font.VBO);
-        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), &vertices);
-        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(0));
-        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
-        glEnableVertexAttribArray(0);
-        glEnableVertexAttribArray(1);
-        glUseProgram(temp_shader_pointer->GetID());
-        glDrawArrays(GL_TRIANGLES, 0, 6);
+        Character& character = font.character_set.at(*character_iterator);
+        RenderCharacter(position_x, position_y, scale, font, character);
+
+        if(row_number == GetCaretLine() && column_number == GetCaretColumn())
+            try_DrawCursor(position_x, position_y, scale, font);
 
         // Advance cursors for next glyph
         position_x += (character.advance >> 6) * scale; // bitshift by 6 to get value in pixels (2^6 = 64)
+
+        ++column_number;
     }
     glDisable(GL_BLEND);
 }

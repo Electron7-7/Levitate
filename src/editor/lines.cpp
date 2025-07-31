@@ -34,7 +34,7 @@ void MoveCaret(long horizontal, long vertical)
             horizontal = 0;
 
         else if(horizontal > 0 && horizontal >= (global_MaxLineLength - caret_HorizontalPosition))
-            horizontal = (global_MaxLineLength - caret_HorizontalPosition - 1);
+            horizontal = (global_MaxLineLength - caret_HorizontalPosition);
 
         caret_HorizontalPosition += horizontal;
     }
@@ -53,6 +53,9 @@ void MoveCaret(long horizontal, long vertical)
 
 void InsertCharacter(unsigned int codepoint, bool move_caret_forward)
 {
+    if(caret_HorizontalPosition == global_MaxLineLength)
+        return;
+
     text_lines.at(caret_VerticalPosition).replace(caret_HorizontalPosition, 1, 1, static_cast<char>(codepoint));
 
     if(move_caret_forward)
@@ -61,15 +64,15 @@ void InsertCharacter(unsigned int codepoint, bool move_caret_forward)
 
 void DeleteCharacters(int amount, bool move_caret_backward)
 {
-    if(amount > caret_HorizontalPosition && caret_HorizontalPosition != 0)
+    if(caret_HorizontalPosition == 0)
+        return;
+
+    if(amount > caret_HorizontalPosition)
         amount = caret_HorizontalPosition; // If we tried to delete too many characters, delete all the characters from the caret's position to 0
 
-    if(amount != 1)
-        text_lines.at(caret_VerticalPosition).replace(caret_HorizontalPosition - amount, amount, 1, EMPTY);
-    else
-        text_lines.at(caret_VerticalPosition).replace(caret_HorizontalPosition, 1, 1, EMPTY);
+    text_lines.at(caret_VerticalPosition).replace(caret_HorizontalPosition - amount, amount, 1, EMPTY);
 
-    if( move_caret_backward && caret_HorizontalPosition != 0)
+    if(move_caret_backward)
         MoveCaret(amount * -1);
 }
 
@@ -82,9 +85,6 @@ std::string GetAllLines()
     for(unsigned int i = 0 ; i < text_lines.size() ; i++)
     {
         std::string new_line = text_lines.at(i);
-
-        if(caret_VerticalPosition == i)
-            new_line.replace(caret_HorizontalPosition, 1, "|");
 
         return_string.append(new_line + "\n");
     }
