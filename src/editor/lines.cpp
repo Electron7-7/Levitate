@@ -8,8 +8,8 @@
 #define EMPTY ' '
 #endif
 
-#define HARDCODED_LINE_LENGTH 0x14
-#define HARDCODED_LINES_COUNT 0x0A
+#define HARDCODED_LINE_LENGTH 0x1B // 27
+#define HARDCODED_LINES_COUNT 0x0B // 11
 
 std::string new_line;
 std::vector<std::string> text_lines = {};
@@ -44,8 +44,8 @@ void MoveCaret(long horizontal, long vertical)
         if(vertical < 0 && (vertical * -1) > caret_VerticalPosition)
             vertical = 0;
 
-        else if(vertical > 0 && vertical > (global_MaxLinesAmount - caret_VerticalPosition))
-            vertical = (global_MaxLinesAmount - caret_VerticalPosition);
+        else if(vertical > 0 && vertical >= (global_MaxLinesAmount - caret_VerticalPosition))
+            vertical = (global_MaxLinesAmount - caret_VerticalPosition - 1);
 
         caret_VerticalPosition += vertical;
     }
