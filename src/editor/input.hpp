@@ -1,5 +1,6 @@
-#ifndef LEVITATE_INPUT
-#define LEVITATE_INPUT
+#ifndef INPUT_H
+#define INPUT_H
+
 #include <string>
 #include <map>
 #include <glm/glm.hpp>
@@ -31,11 +32,6 @@ struct Font
     Font(std::string init_font_name);
 };
 
-void InsertCharacter(const unsigned int);
-void InsertNewLine();
-void moveCursorHorizontally(const int);
-void DeleteCharacter();
-const std::string getGlobalBuffer();
-
 extern std::map<std::string, Font> font_map;
-#endif
+
+#endif // INPUT_H
