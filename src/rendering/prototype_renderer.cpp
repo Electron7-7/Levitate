@@ -1,62 +1,71 @@
-#include "e_scape.hpp"
+#include "prototype_renderer.hpp"
 #include "glad/glad.h"
-#include "embedded/fonts.h"
 #include "common/labels.hpp"
-#include "text_engine/l_input.hpp"
+#include "editor/lines.hpp"
+#include "editor/input.hpp"
 
 #include <glm/ext/matrix_clip_space.hpp>
 #include <ft2build.h>
 #include FT_FREETYPE_H
 
-GLShader *temp_shader_pointer;
+GLShader* temp_shader_pointer;
 
 unsigned int TEMPORARY_VAO;
 
 FT_Library freetype;
+FT_Library* global_freetype = &freetype;
 
-void QuickShittySetupFreetype()
+void GlyphLoop(unsigned long character, FT_Face new_face, const char* font_name)
 {
-    if(FT_Init_FreeType(&freetype))
-        printf("%s FreeType library failed to initialize!%s\n", ERROR, COLOR_RESET);
+    if(FT_Load_Char(new_face, character, FT_LOAD_RENDER))
+    {
+        printf("%s FreeType failed to load glyph (character: %c) (font: %s)%s\n", ERROR, static_cast<char>(character), font_name, COLOR_RESET);
+        return;
+    }
 
+    FT_GlyphSlot glyph_slot = new_face->glyph;
+    FT_Render_Glyph(glyph_slot, FT_RENDER_MODE_SDF);
+
+    unsigned int texture_id;
+    glGenTextures(1, &texture_id);
+    glBindTexture(GL_TEXTURE_2D, texture_id);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, glyph_slot->bitmap.width, glyph_slot->bitmap.rows, 0, GL_RED, GL_UNSIGNED_BYTE, glyph_slot->bitmap.buffer);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    font_map.at(font_name).character_set[static_cast<char>(character)] = Character(texture_id, glyph_slot->bitmap.width, glyph_slot->bitmap.rows, glyph_slot->bitmap_left, glyph_slot->bitmap_top, static_cast<int>(glyph_slot->advance.x));
+}
+
+void QuickShittySetupFont(const char* font_name, unsigned char font_data[], unsigned int font_length)
+{
     FT_Face new_face;
 
-    if(FT_New_Memory_Face(freetype, font_Verdana_ttf, font_Verdana_ttf_len, 0, &new_face))
+    if(FT_New_Memory_Face(freetype, font_data, font_length, 0, &new_face))
         return;
 
     FT_Set_Pixel_Sizes(new_face, 0, 48);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
-    font_map["Verdana"] = Font("Verdana");
+    font_map[font_name] = Font(font_name);
 
     for(unsigned char character = 0 ; character < 128 ; character++)
-    {
-        if(FT_Load_Char(new_face, character, FT_LOAD_RENDER))
-        {
-            printf("%s FreeType failed to load glyph (character: %c)%s\n", ERROR, character, COLOR_RESET);
-            continue;
-        }
+        GlyphLoop(character, new_face, font_name);
 
-        FT_GlyphSlot glyph_slot = new_face->glyph;
-        FT_Render_Glyph(glyph_slot, FT_RENDER_MODE_SDF);
-
-        unsigned int texture_id;
-        glGenTextures(1, &texture_id);
-        glBindTexture(GL_TEXTURE_2D, texture_id);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, glyph_slot->bitmap.width, glyph_slot->bitmap.rows, 0, GL_RED, GL_UNSIGNED_BYTE, glyph_slot->bitmap.buffer);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-        font_map.at("Verdana").character_set[character] = Character(texture_id, glyph_slot->bitmap.width, glyph_slot->bitmap.rows, glyph_slot->bitmap_left, glyph_slot->bitmap_top, static_cast<int>(glyph_slot->advance.x));
-    }
+    if(FT_Select_Charmap(new_face, ft_encoding_unicode))
+        printf("%s Unicode error!%s\n", ERROR, COLOR_RESET);
+    // This is "▉" as pure character codes. It doesn't show up correctly, because it's erroneously parsed as 3 chars.
+    // Need a fix for this.
+    GlyphLoop('\xe2', new_face, font_name);
+    GlyphLoop('\x96', new_face, font_name);
+    GlyphLoop('\x89', new_face, font_name);
 
     FT_Done_Face(new_face);
 
     glBindVertexArray(TEMPORARY_VAO);
-    glGenBuffers(1, &font_map.at("Verdana").VBO);
-    glBindBuffer(GL_ARRAY_BUFFER, font_map.at("Verdana").VBO);
+    glGenBuffers(1, &font_map.at(font_name).VBO);
+    glBindBuffer(GL_ARRAY_BUFFER, font_map.at(font_name).VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6 * 4, nullptr, GL_DYNAMIC_DRAW);
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(0));
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
@@ -64,20 +73,25 @@ void QuickShittySetupFreetype()
     glEnableVertexAttribArray(1);
 }
 
-void QuickShittyPrintToScreen(float position_x, float position_y, const int scale, glm::vec3 color)
+void QuickShittyPrintToScreen(float position_x, float position_y, const int scale, glm::vec3 color, const char* font_name)
 {
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glDisable(GL_CULL_FACE);
-    temp_shader_pointer->setUniform("ortho_matrix", glm::ortho(0.0f, main_window_size.x, 0.0f, main_window_size.y));
+    temp_shader_pointer->setUniform("ortho_matrix", glm::ortho(0.0f, 800.0f, 0.0f, 600.0f));
     temp_shader_pointer->setUniform("text_color", color);
-    Font &font = font_map.at("Verdana");
+    Font &font = font_map.at(font_name);
     float init_position_x = position_x;
-    std::string global_buffer = getGlobalBuffer();
+    // std::string global_buffer = GetCurrentLine().insert(GetCaretColumn(), "▉");
+    std::string global_buffer = GetAllLines();
+    unsigned int row_number = 0;
+    unsigned int column_number = 0;
     for(std::string::const_iterator character_iterator = global_buffer.begin() ; character_iterator != global_buffer.end() ; character_iterator++)
     {
+        ++column_number;
         if(*character_iterator == '\n')
         {
+            ++row_number;
             position_x = init_position_x;
             position_y -= font.character_set.at('0').size_y * scale;
             continue;
@@ -105,7 +119,7 @@ void QuickShittyPrintToScreen(float position_x, float position_y, const int scal
         glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
         glEnableVertexAttribArray(0);
         glEnableVertexAttribArray(1);
-        glUseProgram(temp_shader_pointer->id);
+        glUseProgram(temp_shader_pointer->GetID());
         glDrawArrays(GL_TRIANGLES, 0, 6);
 
         // Advance cursors for next glyph
