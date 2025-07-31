@@ -16,13 +16,13 @@ FLAGS_RELEASE_COMMON  := -O3
 FLAGS_RELEASE_WINDOWS := # Nothing yet
 FLAGS_RELEASE_LINUX   := # Nothing yet
 FLAGS_CXX_COMMON      := -std=c++20
-FLAGS_CC_COMMON       := # Nothing yet
+FLAGS_CC_COMMON       := -std=c11
 FLAGS_WINDOWS         := -mwindows -static
 FLAGS_LINUX           := # Nothing yet
-LDFLAGS_LINUX         := -l glfw -l curses -l freetype
-LDFLAGS_WINDOWS       := -l glfw -l curses -l freetype
+LDFLAGS_LINUX         := -l glfw -l freetype
+LDFLAGS_WINDOWS       := -l glfw -l freetype
 
-INCLUDE := -I src -I src/thirdparty -I/usr/include/freetype2
+INCLUDE := -I src -I src/thirdparty -I /usr/include/freetype2
 
 DIR_ROOT    := build
 DIR_LINUX   := Linux
@@ -67,11 +67,10 @@ VPATH := $(SRC_DIRS)
 SRC := src
 
 SRC_DIRS :=                \
+    $(SRC)/editor          \
     $(SRC)/embedded        \
-    $(SRC)/gui             \
-    $(SRC)/gui/rendering   \
+    $(SRC)/rendering       \
     $(SRC)/system          \
-    $(SRC)/text_engine     \
     $(SRC)/thirdparty/glad \
 
 
@@ -94,7 +93,7 @@ export CYAN    ?= \\x1b[1;36m
 export WHITE   ?= \\x1b[1;37m
 export DEFAULT ?= \\x1b[1;39m
 
-.PHONY: build linux windows release debug build_dir clean disable_colors
+.PHONY: build resources rebuild_resources linux windows release debug build_dir clean disable_colors
 
 build: resources
 	@ printf "$(DEFAULT)::Architecture - $(BLUE)$(BUILD_ARCH)$(RESET)\n"
@@ -105,6 +104,10 @@ build: resources
 	@ printf "$(DEFAULT)::Program Location - $(GREEN)$(DIR_ROOT)/$(BUILD_ARCH)/$(BUILD_VERSION)/$(NAME)$(RESET)\n"
 
 resources: ;@:
+	@ $(MAKE) -s -C $(RESOURCES)
+
+rebuild_resources: ;@:
+	@ $(MAKE) -C $(RESOURCES) -s clean
 	@ $(MAKE) -s -C $(RESOURCES)
 
 linux: ;@:
