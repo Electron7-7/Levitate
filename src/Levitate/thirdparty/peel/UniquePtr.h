@@ -1,0 +1,314 @@
+#pragma once
+
+#include <peel/lang.h>
+#include <glib.h>
+
+peel_begin_header
+
+namespace peel
+{
+
+template<typename T>
+struct UniqueTraits;
+/*
+{
+  static void
+  free (T *);
+
+  constexpr static
+  bool can_free_null;
+}
+*/
+
+template<typename T>
+class UniquePtr final
+{
+private:
+  template<typename U>
+  friend class UniquePtr;
+
+  T *ptr;
+
+  peel_always_inline
+  void
+  do_free () noexcept
+  {
+#ifdef __GNUC__
+    /* If we can statically see it's nullptr, don't do anything. */
+    if (__builtin_constant_p (ptr == nullptr) && (ptr == nullptr))
+      return;
+    if (UniqueTraits<T>::can_free_null || ptr)
+      UniqueTraits<T>::free (ptr);
+#else
+    if (ptr)
+      UniqueTraits<T>::free (ptr);
+#endif
+    ptr = nullptr;
+  }
+
+public:
+  constexpr UniquePtr () noexcept
+    : ptr (nullptr)
+  { }
+
+  constexpr UniquePtr (decltype (nullptr)) noexcept
+    : ptr (nullptr)
+  { }
+
+  UniquePtr (const UniquePtr &) = delete;
+
+  UniquePtr (UniquePtr &&other) noexcept
+    : ptr (other.ptr)
+  {
+    other.ptr = nullptr;
+  }
+
+  peel_always_inline
+  ~UniquePtr () noexcept
+  {
+    do_free ();
+  }
+
+  static UniquePtr
+  adopt_ref (T *ptr) noexcept
+  {
+    UniquePtr p;
+    p.ptr = ptr;
+    return p;
+  }
+
+  peel_nodiscard ("the reference will leak if unused")
+  T *
+  release_ref () && noexcept
+  {
+    T *p = ptr;
+    ptr = nullptr;
+    return p;
+  }
+
+  UniquePtr &
+  operator = (const UniquePtr &) = delete;
+
+  peel_always_inline
+  UniquePtr &
+  operator = (UniquePtr &&other) noexcept
+  {
+    if (this == &other)
+      return *this;
+    do_free ();
+    ptr = other.ptr;
+    other.ptr = nullptr;
+    return *this;
+  }
+
+  peel_always_inline
+  UniquePtr &
+  operator = (decltype (nullptr)) noexcept
+  {
+    do_free ();
+    return *this;
+  }
+
+  constexpr
+  operator T * () const &
+  {
+    return ptr;
+  }
+
+  operator T * () && = delete;
+
+  constexpr T &
+  operator * () const
+  {
+    return *ptr;
+  }
+
+  constexpr T *
+  operator -> () const
+  {
+    return ptr;
+  }
+
+  explicit constexpr
+  operator bool () const
+  {
+    return ptr != nullptr;
+  }
+};
+
+template<typename T>
+class ArrayRef;
+
+template<typename T>
+class UniquePtr<T[]> final
+{
+private:
+  T *ptr;
+  size_t c;
+
+  peel_always_inline
+  void
+  do_free () noexcept
+  {
+    if (!std::is_trivially_destructible<T>::value)
+      {
+        for (size_t i = 0; i < c; i++)
+          ptr[i].~T ();
+      }
+#ifdef __GNUC__
+    /* It is safe to call g_free (nullptr), so don't emit an extra
+       runtime check.  But also don't call g_free (nullptr) when we
+       know at compile time that it's nullptr that we're dealing with. */
+    if (!__builtin_constant_p (ptr == nullptr) || (ptr != nullptr))
+#endif
+#if 0 && GLIB_CHECK_VERSION (2, 76, 0)
+      /* We cannot use this code path, since various libraries allocate
+         more space than they tell us about, such as for additional
+         zero-termination, or for amortizing re-allocations when building
+         up a vector incrementally. */
+      g_free_sized (ptr, sizeof (T) * c);
+#else
+      g_free (ptr);
+#endif
+    ptr = nullptr;
+    c = 0;
+  }
+
+public:
+  constexpr UniquePtr () noexcept
+    : ptr (nullptr)
+    , c (0)
+  { }
+
+  constexpr UniquePtr (decltype (nullptr)) noexcept
+    : ptr (nullptr)
+    , c (0)
+  { }
+
+  UniquePtr (UniquePtr &&other) noexcept
+    : ptr (other.ptr)
+    , c (other.c)
+  {
+    other.ptr = nullptr;
+    other.c = 0;
+  }
+
+  UniquePtr (const UniquePtr &) = delete;
+
+  peel_always_inline
+  ~UniquePtr () noexcept
+  {
+    do_free ();
+  }
+
+  peel_nodiscard ("the reference will leak if unused")
+  T *
+  release_ref () && noexcept
+  {
+    T *p = ptr;
+    ptr = nullptr;
+    c = 0;
+    return p;
+  }
+
+  UniquePtr &
+  operator = (const UniquePtr &) = delete;
+
+  peel_always_inline
+  UniquePtr &
+  operator = (UniquePtr &&other) noexcept
+  {
+    if (this == &other)
+      return *this;
+    do_free ();
+    ptr = other.ptr;
+    c = other.c;
+    other.ptr = nullptr;
+    other.c = 0;
+    return *this;
+  }
+
+  peel_always_inline
+  UniquePtr &
+  operator = (decltype (nullptr)) noexcept
+  {
+    do_free ();
+    return *this;
+  }
+
+  static UniquePtr
+  adopt_ref (T *ptr, size_t size) noexcept
+  {
+    UniquePtr p;
+    p.ptr = ptr;
+    p.c = size;
+    return p;
+  }
+
+  constexpr T *
+  data () const noexcept
+  {
+    return ptr;
+  }
+
+  constexpr size_t
+  size () const noexcept
+  {
+    return c;
+  }
+
+  explicit constexpr
+  operator bool () const
+  {
+    return ptr && c;
+  }
+
+  constexpr T &
+  operator [] (size_t index) const
+  {
+    return ptr[index];
+  }
+
+  constexpr
+  operator ArrayRef<T> () const &
+  {
+    return ArrayRef<T> { ptr, c };
+  }
+
+  operator ArrayRef<T> () && = delete;
+  operator ArrayRef<const T> () && = delete;
+
+  typedef T value_type;
+  typedef T &reference;
+  typedef const T &const_reference;
+  typedef T *iterator;
+  typedef const T *const_iterator;
+
+  constexpr T *
+  begin () const &
+  {
+    return ptr;
+  }
+
+  constexpr const T *
+  cbegin () const &
+  {
+    return ptr;
+  }
+
+  constexpr T *
+  end () const &
+  {
+    return ptr + c;
+  }
+
+  constexpr const T *
+  cend () const &
+  {
+    return ptr + c;
+  }
+};
+
+} /* namespace peel */
+
+peel_end_header
