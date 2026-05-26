@@ -43,3 +43,6 @@ Well, that took longer than expected. I ended up needing to do a total overhaul 
 
 [07/31/25]
 Okay, so I have a slightly better program that uses lines and where the cursor can go anywhere. This prototype is more in line with my idea for Levitate. However, due to having to redraw every line every frame (as well as the way I process and store lines), adding more lines can very quickly overwhelm the CPU & GPU. This is something I could fix with more graphics programming (i.e: better buffer management) and more optimization, but I think I wanna leave Levitate alone for now. Happy with the refactor and improvements, let's not burn out.
+
+[05/26/26]
+I'm converting from Make to CMake and using GTK instead of raw GLFW.
