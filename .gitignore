@@ -1,9 +1,11 @@
 # Clangd
 .cache/
-compile_commands*json
+compile_commands.json
 
-# Build
-build/
+# Build Directories
+Linux_Debug/
+Linux_Release/
+Windows/
 
 # Sublime
 *.sublime*
